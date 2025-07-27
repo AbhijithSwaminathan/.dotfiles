@@ -1,0 +1,1 @@
+.config/nvim/lua/abhi/plugins/lualine.lua
