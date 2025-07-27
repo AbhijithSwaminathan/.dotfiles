@@ -1,1 +1,0 @@
-.config/nvim/lua/abhi/plugins/linting.lua
