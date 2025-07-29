@@ -27,7 +27,7 @@ UBUNTU="🐧"
 
 # Error tracking
 ERRORS=0
-SCRIPT_DIR="$(pwd)"
+SCRIPT_DIR="$HOME/.dotfiles/"
 
 # Function to print colored output
 print_info() {
