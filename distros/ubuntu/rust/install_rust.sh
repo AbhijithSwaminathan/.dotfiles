@@ -57,11 +57,6 @@ CARGO_VERSION=$(cargo --version 2>/dev/null || echo "Version check failed")
 print_info "Installed Rust version: ${BOLD}${RUST_VERSION}${NC}"
 print_info "Installed Cargo version: ${BOLD}${CARGO_VERSION}${NC}"
 
-# Clean up
-if [ -f "$HOME/.cargo/bin/rustup" ]; then
-    print_info "Cleaning up installation files..."
-    rm "$HOME/.cargo/bin/rustup"
-fi
 
 # Finalize script
 finalize_script "Rust Installation" "$RUST"

@@ -70,7 +70,7 @@ if ! command -v pfetch &> /dev/null; then
     fi
     
     # Extract and install
-    if unzip -q master.zip && sudo install pfetch-master/pfetch /usr/local/bin/; then
+    if unzip master.zip && sudo install pfetch-master/pfetch /usr/local/bin/; then
         print_success "pfetch installed successfully"
     else
         print_error "Failed to extract or install pfetch"
@@ -78,14 +78,14 @@ if ! command -v pfetch &> /dev/null; then
     fi
     
     # Clean up
-    rm -rf pfetch-master master.zip
+    safe_execute "Cleaning up pfetch installation files" "rm -rf pfetch-master master.zip"
     verify_command "pfetch" "pfetch"
 else
     print_success "pfetch is already installed"
 fi
 
 ### Install terminal tools
-for tool in "fzf" "eza" "zoxide" "bat" "delta:git-delta" "tldr" "thefuck" "rg:ripgrep"; do
+for tool in "fzf" "eza" "zoxide" "bat" "delta:git-delta" "tldr" "rg:ripgrep"; do
     tool_name=$(echo "$tool" | cut -d: -f1)
     package_name=$(echo "$tool" | cut -d: -f2)
     [ "$package_name" = "$tool_name" ] && package_name="$tool_name"
@@ -98,13 +98,35 @@ for tool in "fzf" "eza" "zoxide" "bat" "delta:git-delta" "tldr" "thefuck" "rg:ri
     fi
 done
 
+### Install thefuck
+if ! command -v thefuck &> /dev/null; then
+    print_info "Installing thefuck..."
+    
+    # Install Python 3.11 and required packages
+    safe_execute "Installing Python 3.11 and distutils" "sudo apt update && sudo apt install -y python3.11 python3.11-distutils"
+    
+    # Install pip for Python 3.11
+    safe_execute "Installing pip for Python 3.11" "python3.11 -m ensurepip --upgrade"
+    
+    # Install pipx
+    safe_execute "Installing pipx" "python3.11 -m pip install --user pipx"
+    safe_execute "Ensuring pipx path" "python3.11 -m pipx ensurepath"
+    
+    # Install thefuck using pipx with Python 3.11
+    safe_execute "Installing thefuck with pipx" "pipx install --python python3.11 thefuck"
+    
+    verify_command "thefuck" "thefuck"
+else
+    print_success "thefuck is already installed"
+fi
+
 #### Configure bat theme
 if command -v bat &> /dev/null; then
     print_info "Configuring bat themes..."
     
     BAT_CONFIG_DIR=$(bat --config-dir 2>/dev/null || echo "$HOME/.config/bat")
     
-    if mkdir -p "$BAT_CONFIG_DIR/themes"; then
+    if safe_execute "Creating bat themes directory" "mkdir -p \"$BAT_CONFIG_DIR/themes\""; then
         print_success "Created bat themes directory"
     else
         print_error "Failed to create bat themes directory"
@@ -166,12 +188,8 @@ fi
 
 # Install Tailscale CLI
 if ! command -v tailscale &> /dev/null; then
-    print_info "Installing Tailscale CLI..."
-    if curl -fsSL https://tailscale.com/install.sh | sh; then
-        print_success "Tailscale CLI installed successfully"
-    else
-        print_error "Failed to install Tailscale CLI"
-    fi
+    safe_execute "Installing Tailscale CLI" "curl -fsSL https://tailscale.com/install.sh | sh"
+    verify_command "tailscale" "Tailscale CLI"
 else
     print_success "Tailscale CLI is already installed"
 fi
@@ -179,13 +197,11 @@ fi
 ## Install github-cli
 if ! command -v gh &> /dev/null; then
     print_info "Installing GitHub CLI..."
-    if curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg && 
-       echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list && 
-       sudo apt update && sudo apt install -y gh; then
-        print_success "GitHub CLI installed successfully"
-    else
-        print_error "Failed to install GitHub CLI"
-    fi
+    safe_execute "Adding GitHub CLI repository and installing" \
+        "curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg && 
+         echo \"deb [arch=\$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\" | sudo tee /etc/apt/sources.list.d/github-cli.list && 
+         sudo apt update && sudo apt install -y gh"
+    verify_command "gh" "GitHub CLI"
 else
     print_success "GitHub CLI is already installed"
 fi
