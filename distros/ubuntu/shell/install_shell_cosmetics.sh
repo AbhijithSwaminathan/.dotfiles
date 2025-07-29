@@ -25,13 +25,6 @@ else
     print_success "ZSH is already installed"
 fi
 
-### Make ZSH the default shell
-if [ "$SHELL" != "$(which zsh)" ]; then
-    safe_execute "Changing default shell to ZSH" "chsh -s $(which zsh)"
-else
-    print_success "ZSH is already the default shell"
-fi
-
 ## Install Helper tools
 print_subsection "${TOOL} Installing Terminal Enhancement Tools"
 
@@ -70,7 +63,7 @@ if ! command -v pfetch &> /dev/null; then
     fi
     
     # Extract and install
-    if unzip master.zip && sudo install pfetch-master/pfetch /usr/local/bin/; then
+    if unzip -q master.zip && sudo install pfetch-master/pfetch /usr/local/bin/; then
         print_success "pfetch installed successfully"
     else
         print_error "Failed to extract or install pfetch"
@@ -85,7 +78,7 @@ else
 fi
 
 ### Install terminal tools
-for tool in "fzf" "eza" "zoxide" "bat" "delta:git-delta" "tldr" "rg:ripgrep"; do
+for tool in "fzf" "eza" "zoxide" "delta:git-delta" "tldr" "rg:ripgrep"; do
     tool_name=$(echo "$tool" | cut -d: -f1)
     package_name=$(echo "$tool" | cut -d: -f2)
     [ "$package_name" = "$tool_name" ] && package_name="$tool_name"
@@ -97,6 +90,33 @@ for tool in "fzf" "eza" "zoxide" "bat" "delta:git-delta" "tldr" "rg:ripgrep"; do
         print_success "$package_name is already installed"
     fi
 done
+
+### Install bat
+if ! command -v bat &> /dev/null; then
+    print_info "Installing bat..."
+    
+    # Download bat .deb package
+    safe_execute "Downloading bat package" "wget https://github.com/sharkdp/bat/releases/download/v0.25.0/bat-musl_0.25.0_amd64.deb"
+    
+    # Install the package
+    safe_execute "Installing bat package" "sudo dpkg -i bat-musl_0.25.0_amd64.deb"
+    
+    # Fix any dependency issues
+    safe_execute "Fixing bat dependencies" "sudo apt-get install -f"
+    
+    # Clean up downloaded package
+    safe_execute "Cleaning up bat installation files" "rm -f bat-musl_0.25.0_amd64.deb"
+    
+    # Verify installation
+    verify_command "bat" "bat"
+    
+    # Show version for confirmation
+    if command -v bat &> /dev/null; then
+        print_info "Installed bat version: $(bat --version)"
+    fi
+else
+    print_success "bat is already installed"
+fi
 
 ### Install thefuck
 if ! command -v thefuck &> /dev/null; then
@@ -204,6 +224,13 @@ if ! command -v gh &> /dev/null; then
     verify_command "gh" "GitHub CLI"
 else
     print_success "GitHub CLI is already installed"
+fi
+
+### Make ZSH the default shell
+if [ "$SHELL" != "$(which zsh)" ]; then
+    safe_execute "Changing default shell to ZSH" "chsh -s $(which zsh)"
+else
+    print_success "ZSH is already the default shell"
 fi
 
 # Finalize script
