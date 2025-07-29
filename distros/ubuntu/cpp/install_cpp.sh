@@ -73,11 +73,11 @@ verify_command() {
 }
 
 # Install C++ 20 version using a package manager
-if ! command -v g++ >/dev/null 2>&1; then
-    safe_execute "${CPP} Installing g++ compiler" "sudo apt-get install -y g++-11"
+if ! command -v g++ --version >/dev/null 2>&1; then
+    safe_execute "${CPP} Installing g++ compiler" "sudo apt-get install -y build-essential g++"
     
     # Verify installation
-    verify_command "g++" "g++ compiler"
+    verify_command "g++ --version" "g++ compiler"
 else
     print_success "g++ is already installed"
 fi
