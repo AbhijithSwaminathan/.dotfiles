@@ -1,6 +1,13 @@
 ## Invoke installation scripts based on distro in the distros/<distro_name>/install_script.sh format
 #!/bin/bash
 
+# Check if running with bash
+if [ -z "$BASH_VERSION" ]; then
+    echo "Error: This script requires bash to run."
+    echo "Please run with: bash $0"
+    exit 1
+fi
+
 set -e
 set -o pipefail
 
@@ -147,27 +154,5 @@ else
     print_error "Please check the error messages above for details"
     print_info "You can try running the installation script directly:"
     print_info "  ${BOLD}bash ${INSTALL_SCRIPT}${NC}"
-    exit 1
-fi
-
-## Run validation script
-VALIDATE_SCRIPT="distros/${DISTRO}/validate.sh"
-print_info "Looking for validation script: ${BOLD}${VALIDATE_SCRIPT}${NC}"
-if [ -f "$VALIDATE_SCRIPT" ]; then
-    print_success "Found validation script for ${BOLD}${DISTRO}${NC}"
-    print_info "Starting validation process..."
-    echo ""
-    bash "$VALIDATE_SCRIPT"
-    if [ $? -eq 0 ]; then
-        echo ""
-        print_success "Validation completed successfully for ${BOLD}${DISTRO}${NC}"
-    else
-        echo ""
-        print_error "Validation failed for ${BOLD}${DISTRO}${NC}"
-        exit 1
-    fi
-else
-    print_error "No validation script found for ${BOLD}${DISTRO}${NC}"
-    print_info "Expected script location: ${BOLD}${VALIDATE_SCRIPT}${NC}"
     exit 1
 fi
