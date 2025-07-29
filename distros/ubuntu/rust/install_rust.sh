@@ -65,10 +65,8 @@ verify_command() {
     
     if command -v "$cmd" >/dev/null 2>&1; then
         print_success "$name is available and working"
-        return 0
     else
         print_error "$name is not available or not working"
-        return 1
     fi
 }
 

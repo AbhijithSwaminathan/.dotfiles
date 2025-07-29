@@ -65,10 +65,8 @@ verify_command() {
     
     if command -v "$cmd" >/dev/null 2>&1; then
         print_success "$name is available and working"
-        return 0
     else
         print_error "$name is not available or not working"
-        return 1
     fi
 }
 
@@ -79,10 +77,8 @@ verify_service() {
     
     if systemctl is-active --quiet "$service"; then
         print_success "$name service is running"
-        return 0
     else
         print_warning "$name service is not running"
-        return 1
     fi
 }
 

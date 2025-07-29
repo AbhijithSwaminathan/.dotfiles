@@ -81,7 +81,6 @@ if [ ! -d "$HOME/.nvm" ]; then
         print_success "nvm downloaded and installed successfully"
     else
         print_error "Failed to download or install nvm"
-        return 1
     fi
     
     # Load nvm
@@ -91,7 +90,6 @@ if [ ! -d "$HOME/.nvm" ]; then
         print_success "nvm loaded successfully"
     else
         print_error "Failed to load nvm"
-        return 1
     fi
 else
     print_success "nvm is already installed"
@@ -102,7 +100,6 @@ fi
 # Verify nvm is working
 if ! command -v nvm >/dev/null 2>&1; then
     print_error "nvm is not working properly"
-    return 1
 fi
 
 # Install latest node.js version along with npm
@@ -135,4 +132,4 @@ else
 fi
 
 # Return the error count for parent script to capture
-return $ERRORS  
+return $ERRORS
