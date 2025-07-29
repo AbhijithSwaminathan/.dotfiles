@@ -173,7 +173,7 @@ else
 fi
 
 # Check if validation script exists and offer to run it
-VALIDATE_SCRIPT="distros/${DISTRO}/validate.sh"
+VALIDATE_SCRIPT="$HOME/.dotfiles/distros/${DISTRO}/validate.sh"
 if [ -f "$VALIDATE_SCRIPT" ]; then
     print_info "Validation script found: ${BOLD}${VALIDATE_SCRIPT}${NC}"
     print_info "Running validation to check installation status..."
