@@ -30,7 +30,7 @@ UBUNTU="🐧"
 
 # Error tracking
 ERRORS=0
-SCRIPT_DIR="$HOME/.dotfiles/"
+SCRIPT_DIR="$HOME/.dotfiles"
 
 # Function to log errors
 log_error() {

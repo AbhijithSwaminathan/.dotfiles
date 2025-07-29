@@ -2,7 +2,7 @@
 #!/bin/bash
 
 # Get error log file from parent script
-ERROR_LOG="${1:-/tmp/dotfiles_error.log}"
+ERROR_LOG="${1:-error.log}"
 
 # Color codes for pretty printing
 RED='\033[0;31m'
