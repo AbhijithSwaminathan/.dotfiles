@@ -1,128 +1,20 @@
 ## Install ZSHELL and other components
 #!/bin/bash
 
+# Get script directory and source common library
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COMMON_LIB_DIR="$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")/lib"
+source "$COMMON_LIB_DIR/common.sh"
+
 # Get error log file from parent script
 ERROR_LOG="${1:-error.log}"
+init_error_log "$ERROR_LOG"
 
-# Color codes for pretty printing
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-NC='\033[0m' # No Color
+# Script directory for dotfiles
+DOTFILES_DIR="$HOME/.dotfiles"
 
-# Icons for pretty printing
-SUCCESS="✅"
-FAILURE="❌"
-WARNING="⚠️"
-INFO="ℹ️"
-PACKAGE="📦"
-CONFIG="⚙️"
-SHELL_ICON="🐚"
-TOOL="🔧"
-LINK="🔗"
-
-# Error tracking
-ERRORS=0
-SCRIPT_DIR="$HOME/.dotfiles"
-
-# Function to print colored output
-print_info() {
-    echo -e "${CYAN}${INFO}${NC} ${BOLD}$1${NC}"
-}
-
-print_success() {
-    echo -e "${GREEN}${SUCCESS}${NC} ${BOLD}$1${NC}"
-}
-
-print_error() {
-    echo -e "${RED}${FAILURE}${NC} ${BOLD}$1${NC}"
-    echo "[ERROR] [$(date '+%Y-%m-%d %H:%M:%S')] Shell: $1" >> "$ERROR_LOG"
-    ERRORS=$((ERRORS + 1))
-}
-
-print_warning() {
-    echo -e "${YELLOW}${WARNING}${NC} ${BOLD}$1${NC}"
-}
-
-print_subsection() {
-    echo -e "\n${BOLD}${PURPLE}── $1 ──${NC}\n"
-}
-
-# Function to safely execute commands
-safe_execute() {
-    local description="$1"
-    shift
-    local cmd="$@"
-    
-    print_info "$description"
-    if eval "$cmd"; then
-        print_success "$description completed successfully"
-        return 0
-    else
-        print_error "$description failed"
-        return 1
-    fi
-}
-
-# Function to verify command installation
-verify_command() {
-    local cmd="$1"
-    local name="$2"
-    
-    if command -v "$cmd" >/dev/null 2>&1; then
-        print_success "$name is available and working"
-        return 0
-    else
-        print_error "$name is not available or not working"
-        return 1
-    fi
-}
-
-# Function to safely create symlink
-safe_symlink() {
-    local source="$1"
-    local target="$2"
-    local description="$3"
-    
-    # Check if source exists
-    if [ ! -e "$source" ]; then
-        print_error "Source file/directory does not exist: $source"
-        return 1
-    fi
-    
-    # Remove existing target if it exists
-    if [ -e "$target" ] || [ -L "$target" ]; then
-        print_warning "Removing existing $description..."
-        if ! rm -rf "$target"; then
-            print_error "Failed to remove existing $description"
-            return 1
-        fi
-    fi
-    
-    # Create parent directory if needed
-    local parent_dir=$(dirname "$target")
-    if [ ! -d "$parent_dir" ]; then
-        print_info "Creating parent directory: $parent_dir"
-        if ! mkdir -p "$parent_dir"; then
-            print_error "Failed to create parent directory: $parent_dir"
-            return 1
-        fi
-    fi
-    
-    # Create symlink
-    print_info "Creating symlink for $description..."
-    if ln -s "$source" "$target"; then
-        print_success "$description symlinked successfully"
-        return 0
-    else
-        print_error "Failed to create symlink for $description"
-        return 1
-    fi
-}
+# Start Shell installation
+display_script_header "Shell and Terminal Enhancements Installation" "$SHELL_ICON"
 
 ## Install ZSH using apt
 print_subsection "${SHELL_ICON} Installing ZSH Shell"
@@ -220,8 +112,8 @@ if command -v bat &> /dev/null; then
     fi
     
     # Copy themes if they exist
-    if [ -d "$SCRIPT_DIR/common/themes" ]; then
-        if cp -r "$SCRIPT_DIR/common/themes/"* "$BAT_CONFIG_DIR/themes/" 2>/dev/null; then
+    if [ -d "$DOTFILES_DIR/common/themes" ]; then
+        if cp -r "$DOTFILES_DIR/common/themes/"* "$BAT_CONFIG_DIR/themes/" 2>/dev/null; then
             print_success "Bat themes copied successfully"
             
             # Build bat cache
@@ -251,42 +143,55 @@ fi
 print_subsection "${CONFIG} Setting up Configuration Files"
 
 ### Symlink Neovim configuration
-if [ -d "$SCRIPT_DIR/common/nvim" ]; then
+if [ -d "$DOTFILES_DIR/common/nvim" ]; then
     # First create symlink to the nvim directory itself
-    safe_symlink "$SCRIPT_DIR/common/nvim" "$HOME/.config/nvim" "Neovim configuration"
+    safe_symlink "$DOTFILES_DIR/common/nvim" "$HOME/.config/nvim" "Neovim configuration"
 else
-    print_error "Neovim configuration directory not found: $SCRIPT_DIR/common/nvim"
+    print_error "Neovim configuration directory not found: $DOTFILES_DIR/common/nvim"
 fi
 
 ### Symlink ZSH configuration
-if [ -f "$SCRIPT_DIR/common/zshell/.zshrc" ]; then
-    safe_symlink "$SCRIPT_DIR/common/zshell/.zshrc" "$HOME/.zshrc" "ZSH configuration"
+if [ -f "$DOTFILES_DIR/common/zshell/.zshrc" ]; then
+    safe_symlink "$DOTFILES_DIR/common/zshell/.zshrc" "$HOME/.zshrc" "ZSH configuration"
 else
-    print_error "ZSH configuration file not found: $SCRIPT_DIR/common/zshell/.zshrc"
+    print_error "ZSH configuration file not found: $DOTFILES_DIR/common/zshell/.zshrc"
 fi
 
 ### Symlink Powerlevel10k configuration
-if [ -f "$SCRIPT_DIR/common/zshell/.p10k.zsh" ]; then
-    safe_symlink "$SCRIPT_DIR/common/zshell/.p10k.zsh" "$HOME/.p10k.zsh" "Powerlevel10k configuration"
+if [ -f "$DOTFILES_DIR/common/zshell/.p10k.zsh" ]; then
+    safe_symlink "$DOTFILES_DIR/common/zshell/.p10k.zsh" "$HOME/.p10k.zsh" "Powerlevel10k configuration"
 else
-    print_error "Powerlevel10k configuration file not found: $SCRIPT_DIR/common/zshell/.p10k.zsh"
+    print_error "Powerlevel10k configuration file not found: $DOTFILES_DIR/common/zshell/.p10k.zsh"
 fi
 
-# Final status check
-if [ $ERRORS -eq 0 ]; then
-    print_success "Shell and terminal enhancements installation completed successfully!"
-    print_info "Note: You may need to log out and log back in for all changes to take effect"
+# Install Tailscale CLI
+if ! command -v tailscale &> /dev/null; then
+    print_info "Installing Tailscale CLI..."
+    if curl -fsSL https://tailscale.com/install.sh | sh; then
+        print_success "Tailscale CLI installed successfully"
+    else
+        print_error "Failed to install Tailscale CLI"
+    fi
 else
-    print_error "Shell and terminal enhancements installation completed with $ERRORS error(s)"
-    print_warning "Some components may not have been installed or configured correctly"
+    print_success "Tailscale CLI is already installed"
 fi
-if [ "$SHELL" != "$(which zsh)" ]; then
-    print_info "Changing default shell to ZSH..."
-    chsh -s "$(which zsh)"
-    print_success "Default shell changed to ZSH"
+
+## Install github-cli
+if ! command -v gh &> /dev/null; then
+    print_info "Installing GitHub CLI..."
+    if curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg && 
+       echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list && 
+       sudo apt update && sudo apt install -y gh; then
+        print_success "GitHub CLI installed successfully"
+    else
+        print_error "Failed to install GitHub CLI"
+    fi
 else
-    print_success "ZSH is already the default shell"
+    print_success "GitHub CLI is already installed"
 fi
+
+# Finalize script
+finalize_script "Shell and Terminal Enhancements Installation" "$SHELL_ICON"
 
 ## Install Helper tools
 print_subsection "${TOOL} Installing Terminal Enhancement Tools"
@@ -501,8 +406,6 @@ else
     print_success "GitHub CLI is already installed"
 fi
 
-print_success "Shell and terminal enhancements installation complete!"
-
-# Return the error count for parent script to capture
-return $ERRORS  
+# Finalize script
+finalize_script "Shell and Terminal Enhancements Installation" "$SHELL_ICON"  
 

@@ -1,226 +1,121 @@
 # Ubuntu installation script
 #!/bin/bash
 
+# Get script directory and source common library
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COMMON_LIB_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")/lib"
+source "$COMMON_LIB_DIR/common.sh"
+
 set -o pipefail
 # Remove set -e to allow script to continue on errors
 
-# Get error log file from parent script
+# Get error log file from parent script or use default
 ERROR_LOG="${1:-error.log}"
+init_error_log "$ERROR_LOG"
 
-# Color codes for pretty printing
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-NC='\033[0m' # No Color
-
-# Icons for pretty printing
-SUCCESS="✅"
-FAILURE="❌"
-WARNING="⚠️"
-INFO="ℹ️"
-PACKAGE="📦"
-CONFIG="⚙️"
-TOOL="🔧"
-LINK="🔗"
-UBUNTU="🐧"
-
-# Error tracking
-ERRORS=0
-SCRIPT_DIR="$HOME/.dotfiles"
-
-# Function to log errors
-log_error() {
-    local error_msg="$1"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "[$timestamp] [ubuntu-install] ERROR: $error_msg" >> "$ERROR_LOG"
-    ERRORS=$((ERRORS + 1))
-}
-
-# Function to print colored output
-print_info() {
-    echo -e "${CYAN}${INFO}${NC} ${BOLD}$1${NC}"
-}
-
-print_success() {
-    echo -e "${GREEN}${SUCCESS}${NC} ${BOLD}$1${NC}"
-}
-
-print_error() {
-    echo -e "${RED}${FAILURE}${NC} ${BOLD}$1${NC}"
-    log_error "$1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}${WARNING}${NC} ${BOLD}$1${NC}"
-}
-
-print_header() {
-    echo -e "\n${BOLD}${BLUE}════════════════════════════════════════${NC}"
-    echo -e "${BOLD}${BLUE}$1${NC}"
-    echo -e "${BOLD}${BLUE}════════════════════════════════════════${NC}\n"
-}
-
-print_subsection() {
-    echo -e "\n${BOLD}${PURPLE}── $1 ──${NC}\n"
-}
-
-# Function to safely execute commands
-safe_execute() {
-    local description="$1"
-    shift
-    local cmd="$@"
-    
-    print_info "$description"
-    if eval "$cmd"; then
-        print_success "$description completed successfully"
-        return 0
-    else
-        print_error "$description failed"
-        return 1
-    fi
-}
-
-# Function to safely create symlink
-safe_symlink() {
-    local source="$1"
-    local target="$2"
-    local description="$3"
-    
-    # Check if source exists
-    if [ ! -e "$source" ]; then
-        print_error "Source file/directory does not exist: $source"
-        return 1
-    fi
-    
-    # Remove existing target if it exists
-    if [ -e "$target" ] || [ -L "$target" ]; then
-        print_warning "Removing existing $description..."
-        if ! rm -rf "$target"; then
-            print_error "Failed to remove existing $description"
-            return 1
-        fi
-    fi
-    
-    # Create parent directory if needed
-    local parent_dir=$(dirname "$target")
-    if [ ! -d "$parent_dir" ]; then
-        print_info "Creating parent directory: $parent_dir"
-        if ! mkdir -p "$parent_dir"; then
-            print_error "Failed to create parent directory: $parent_dir"
-            return 1
-        fi
-    fi
-    
-    # Create symlink
-    print_info "Creating symlink for $description..."
-    if ln -s "$source" "$target"; then
-        print_success "$description symlinked successfully"
-        return 0
-    else
-        print_error "Failed to create symlink for $description"
-        return 1
-    fi
-}
-
-# Function to safely run subscript
-safe_run_script() {
-    local script_path="$1"
-    local description="$2"
-    
-    if [ ! -f "$script_path" ]; then
-        print_error "Script not found: $script_path"
-        return 1
-    fi
-    
-    print_info "Running $description..."
-    # Pass the ERROR_LOG path to the subscript and capture its error count
-    bash "$script_path" "$ERROR_LOG"
-    local subscript_errors=$?
-    
-    if [ $subscript_errors -eq 0 ]; then
-        print_success "$description completed successfully"
-        return 0
-    else
-        print_error "$description failed with $subscript_errors error(s)"
-        # Add the subscript errors to our total error count
-        ERRORS=$((ERRORS + subscript_errors))
-        return $subscript_errors
-    fi
-}
+# Script directory for dotfiles
+DOTFILES_DIR="$HOME/.dotfiles"
 
 # Start Ubuntu installation
-print_header "${UBUNTU} Ubuntu Dotfiles Installation"
+display_script_header "Ubuntu Dotfiles Installation" "$UBUNTU"
 
 # Update package lists once at the beginning
 safe_execute "Updating package lists" "sudo apt update"
 
-# Symlink common/bash/.bashrc 
-safe_symlink "$SCRIPT_DIR/common/bash/.bashrc" "$HOME/.bashrc" "Bash configuration"
+# Essential packages for development
+print_subsection "${PACKAGE} Installing Essential Packages"
 
-# Install git
-print_subsection "${PACKAGE} Installing Core System Tools"
-if ! command -v git &> /dev/null; then
-    safe_execute "Installing Git" "sudo apt install -y git"
+# Install basic tools
+safe_execute "Installing curl" "sudo apt install -y curl"
+safe_execute "Installing wget" "sudo apt install -y wget"
+safe_execute "Installing git" "sudo apt install -y git"
+safe_execute "Installing vim" "sudo apt install -y vim"
+safe_execute "Installing build-essential" "sudo apt install -y build-essential"
+safe_execute "Installing software-properties-common" "sudo apt install -y software-properties-common"
+safe_execute "Installing apt-transport-https" "sudo apt install -y apt-transport-https"
+safe_execute "Installing ca-certificates" "sudo apt install -y ca-certificates"
+safe_execute "Installing gnupg" "sudo apt install -y gnupg"
+safe_execute "Installing lsb-release" "sudo apt install -y lsb-release"
+
+# Development environment setup
+print_subsection "${TOOL} Setting up Development Environment"
+
+# Check if individual installation scripts exist and run them
+scripts=(
+    "node/install_node.sh:Node.js"
+    "cpp/install_cpp.sh:C++ Development Tools" 
+    "rust/install_rust.sh:Rust"
+    "golang/install_go.sh:Go"
+    "docker/install_docker.sh:Docker"
+    "shell/install_shell_cosmetics.sh:Shell Cosmetics"
+)
+
+for script_info in "${scripts[@]}"; do
+    IFS=':' read -r script_path description <<< "$script_info"
+    full_script_path="$DOTFILES_DIR/distros/ubuntu/$script_path"
     
-    # Verify git installation
-    if ! command -v git &> /dev/null; then
-        print_error "Git installation verification failed"
-        return 1
+    if [ -f "$full_script_path" ]; then
+        safe_run_script "$full_script_path" "$description"
+    else
+        print_warning "Script not found: $script_path"
     fi
+done
+
+# Configuration symlinks
+print_subsection "${LINK} Creating Configuration Symlinks"
+
+# Nvim configuration
+nvim_source="$DOTFILES_DIR/common/nvim"
+nvim_target="$HOME/.config/nvim"
+if [ -d "$nvim_source" ]; then
+    safe_symlink "$nvim_source" "$nvim_target" "Neovim configuration"
 else
-    print_success "Git is already installed"
+    print_warning "Neovim configuration source not found: $nvim_source"
 fi
 
-## Symlink .gitconfig if it exists remove and symlink
-print_subsection "${CONFIG} Configuring Git"
-safe_symlink "$SCRIPT_DIR/common/git/.gitconfig" "$HOME/.gitconfig" "Git configuration"
-
-# Install Programming Languages
-print_header "${PACKAGE} Installing Programming Languages"
-print_info "Installing Node.js, C++, Rust, and Go..."
-
-## Install Node.js
-print_subsection "Installing Node.js"
-safe_run_script "$SCRIPT_DIR/distros/ubuntu/node/install_node.sh" "Node.js installation"
-
-## Install C++
-print_subsection "Installing C++ Development Tools"
-safe_run_script "$SCRIPT_DIR/distros/ubuntu/cpp/install_cpp.sh" "C++ development tools installation"
-
-## Install Rust
-print_subsection "Installing Rust"
-safe_run_script "$SCRIPT_DIR/distros/ubuntu/rust/install_rust.sh" "Rust installation"
-
-## Install Go
-print_subsection "Installing Go"
-safe_run_script "$SCRIPT_DIR/distros/ubuntu/golang/install_go.sh" "Go installation"
-
-# Install Tools
-print_header "${TOOL} Installing Development Tools"
-
-## Install Docker
-print_subsection "Installing Docker"
-safe_run_script "$SCRIPT_DIR/distros/ubuntu/docker/install_docker.sh" "Docker installation"
-
-## Install Shell Cosmetics
-print_header "${CONFIG} Installing Shell & Terminal Enhancements"
-safe_run_script "$SCRIPT_DIR/distros/ubuntu/shell/install_shell_cosmetics.sh" "Shell and terminal enhancements"
-
-# Final status check
-if [ $ERRORS -eq 0 ]; then
-    print_header "${SUCCESS} Ubuntu Installation Complete"
-    print_success "All components have been installed successfully!"
-    print_info "Run ${BOLD}distros/ubuntu/validate.sh${NC} to validate your installation"
+# Git configuration
+git_source="$DOTFILES_DIR/common/git"
+if [ -d "$git_source" ]; then
+    for config_file in "$git_source"/*; do
+        if [ -f "$config_file" ]; then
+            filename=$(basename "$config_file")
+            target="$HOME/.$filename"
+            safe_symlink "$config_file" "$target" "Git $filename"
+        fi
+    done
 else
-    print_header "${FAILURE} Installation Completed with Errors"
-    print_error "Installation completed with $ERRORS error(s)"
-    print_warning "Some components may not have been installed correctly"
-    print_info "Run ${BOLD}distros/ubuntu/validate.sh${NC} to check what needs to be fixed"
+    print_warning "Git configuration source not found: $git_source"
 fi
 
-# Return the error count for parent script to capture
-return $ERRORS
+# Theme configuration
+theme_source="$DOTFILES_DIR/common/themes"
+theme_target="$HOME/.themes"
+if [ -d "$theme_source" ]; then
+    safe_symlink "$theme_source" "$theme_target" "Themes"
+else
+    print_warning "Themes source not found: $theme_source"
+fi
+
+# Shell configuration
+shell_source="$DOTFILES_DIR/common/zshell"
+if [ -d "$shell_source" ]; then
+    for config_file in "$shell_source"/*; do
+        if [ -f "$config_file" ]; then
+            filename=$(basename "$config_file")
+            target="$HOME/.$filename"
+            safe_symlink "$config_file" "$target" "Shell $filename"
+        fi
+    done
+else
+    print_warning "Shell configuration source not found: $shell_source"
+fi
+
+# Final system update and cleanup
+print_subsection "${CONFIG} Final System Configuration"
+safe_execute "Updating package cache" "sudo apt update"
+safe_execute "Upgrading system packages" "sudo apt upgrade -y"
+safe_execute "Removing unnecessary packages" "sudo apt autoremove -y"
+safe_execute "Cleaning package cache" "sudo apt autoclean"
+
+# Finalize script
+finalize_script "Ubuntu Installation" "$UBUNTU"
