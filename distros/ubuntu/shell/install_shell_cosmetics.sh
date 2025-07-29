@@ -1,6 +1,9 @@
 ## Install ZSHELL and other components
 #!/bin/bash
 
+# Get error log file from parent script
+ERROR_LOG="${1:-/tmp/dotfiles_error.log}"
+
 # Color codes for pretty printing
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -24,7 +27,6 @@ LINK="🔗"
 
 # Error tracking
 ERRORS=0
-ERROR_LOG="/tmp/dotfiles_error.log"
 SCRIPT_DIR="$HOME/.dotfiles/"
 
 # Function to print colored output

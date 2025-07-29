@@ -149,7 +149,8 @@ safe_run_script() {
     fi
     
     print_info "Running $description..."
-    if bash "$script_path"; then
+    # Pass the ERROR_LOG path to the subscript
+    if bash "$script_path" "$ERROR_LOG"; then
         print_success "$description completed successfully"
         return 0
     else

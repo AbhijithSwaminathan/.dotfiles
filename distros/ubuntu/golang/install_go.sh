@@ -1,6 +1,9 @@
 ## install latest golang version and validate the installation in ubuntu
 #!/bin/bash
 
+# Get error log file from parent script
+ERROR_LOG="${1:-/tmp/dotfiles_error.log}"
+
 # Color codes for pretty printing
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -19,7 +22,6 @@ GOLANG="🐹"
 
 # Error tracking
 ERRORS=0
-ERROR_LOG="/tmp/dotfiles_error.log"
 GO_VERSION="1.20.5"
 GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
 

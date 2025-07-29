@@ -1,6 +1,6 @@
 # Error logs generated during installation
 error.log
-/tmp/dotfiles_error.log
+*.log
 
 # OS generated files
 .DS_Store

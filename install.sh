@@ -31,7 +31,7 @@ ROCKET="🚀"
 
 # Error tracking and logging
 ERRORS=0
-ERROR_LOG="error.log"
+ERROR_LOG="$(pwd)/error.log"  # Use absolute path for consistency
 SCRIPT_START_TIME=$(date)
 
 # Clear previous error log
@@ -150,9 +150,10 @@ fi
 
 print_success "Found installation script for ${BOLD}${DISTRO}${NC}"
 print_info "Starting installation process..."
+print_info "Error log will be written to: ${BOLD}${ERROR_LOG}${NC}"
 echo ""
 
-# Run the installation script
+# Run the installation script and pass the error log path
 if bash "$INSTALL_SCRIPT" "$ERROR_LOG"; then
     echo ""
     print_success "Installation process completed for ${BOLD}${DISTRO}${NC}"

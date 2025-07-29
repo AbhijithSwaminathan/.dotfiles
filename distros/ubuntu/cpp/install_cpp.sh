@@ -1,6 +1,9 @@
 ## Install cpp 20 version using a package manager and validate the installation and install cmake in ubuntu
 #!/bin/bash
 
+# Get error log file from parent script
+ERROR_LOG="${1:-/tmp/dotfiles_error.log}"
+
 # Color codes for pretty printing
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -19,7 +22,6 @@ CPP="⚙️"
 
 # Error tracking
 ERRORS=0
-ERROR_LOG="/tmp/dotfiles_error.log"
 
 # Function to print colored output
 print_info() {

@@ -1,6 +1,9 @@
 ## Install latest node.js version along with npm using nvm and validate the installation in ubuntu
 #!/bin/bash
 
+# Get error log file from parent script
+ERROR_LOG="${1:-/tmp/dotfiles_error.log}"
+
 # Color codes for pretty printing
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -19,7 +22,6 @@ NODEJS="📗"
 
 # Error tracking
 ERRORS=0
-ERROR_LOG="/tmp/dotfiles_error.log"
 
 # Function to print colored output
 print_info() {
