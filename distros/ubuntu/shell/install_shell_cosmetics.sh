@@ -341,6 +341,28 @@ else
     print_success "fzf is already installed"
 fi
 
+## Install rust-fd-find
+if ! command -v fd &> /dev/null; then
+    print_info "Installing fd-find..."
+    sudo apt install -y fd-find
+    # Create symlink for fd to be accessible as 'fd'
+    if [ ! -L /usr/local/bin/fd ]; then
+        sudo ln -s /usr/bin/fdfind /usr/local/bin/fd
+        print_success "fd symlink created successfully"
+    else
+        print_success "fd symlink already exists"
+    fi
+else
+    print_success "fd-find is already installed"
+fi
+
+### Clone https://github.com/junegunn/fzf-git.sh.git into ~/.config/fzf-git
+if [ ! -d "$HOME/.config/fzf-git" ]; then
+    print_info "Cloning fzf-git repository..."
+    git clone https://github.com/junegunn/fzf-git.sh.git "$HOME/.config/fzf-git"
+fi
+print_success "fzf-git repository cloned successfully"
+
 ### Install eza
 if ! command -v eza &> /dev/null; then
     print_info "Installing eza..."
@@ -462,6 +484,36 @@ if [ $? -eq 0 ]; then
 else
     print_error "Failed to source .zshrc"
     exit 1
+fi
+
+# Install tailscale cli
+if ! command -v tailscale &> /dev/null; then
+    print_info "Installing Tailscale CLI..."
+    if curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/focal.gpg | sudo gpg --dearmor -o /usr/share/keyrings/tailscale-archive-keyring.gpg && \
+       echo "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu focal main" | sudo tee /etc/apt/sources.list.d/tailscale.list && \
+       sudo apt update && sudo apt install -y tailscale; then
+        print_success "Tailscale CLI installed successfully"
+    else
+        print_error "Failed to install Tailscale CLI"
+        exit 1
+    fi
+else
+    print_success "Tailscale CLI is already installed"
+fi
+
+## Install github-cli
+if ! command -v gh &> /dev/null; then
+    print_info "Installing GitHub CLI..."
+    if curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+       echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list && \
+       sudo apt update && sudo apt install -y gh; then
+        print_success "GitHub CLI installed successfully"
+    else
+        print_error "Failed to install GitHub CLI"
+        exit 1
+    fi
+else
+    print_success "GitHub CLI is already installed"
 fi
 
 print_success "Shell and terminal enhancements installation complete!"

@@ -65,10 +65,21 @@ export FZF_DEFAULT_OPTS=" \
  --color=pointer:#051519,marker:#fb3d66,spinner:#fb3d66,header:#f8818e"
 
 # FZF Keybindings
+export FZF_DEFAULT_COMMAND='fd --hidden --strip-cwd-prefix --exclude .git --exclude node_modules'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND='fd --type d --hidden --strip-cwd-prefix --exclude .git --exclude node_modules'
 export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --line-range :500 {}'"
 export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always --icons=always {} | head -200'"
 
 # FZF Function
+
+_fzf_compgen_path() {
+	fd --hidden --exclude .git node_modules . "$1"
+}
+
+_fzf_compgen_dir() {
+	fd --type d --hidden --exclude .git node_modules . "$1"
+}
 # Advance customization of fzf options via _fzf_comprun function
 # - The first argument to the function is the name of the command.
 # - You should make sure to pass the rest of the argument to fzf
@@ -83,6 +94,8 @@ _fzf_comprun(){
 		*)	fzf --preview 'bat -n --color=always --line-range :500 {}'	"$@"	;;
 	esac
 }
+
+source $HOME/.config/fzf-git.sh/fzf-git.sh
 
 # Keybindings
 bindkey -e
