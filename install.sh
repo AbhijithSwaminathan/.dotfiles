@@ -79,9 +79,13 @@ show_error_summary() {
         echo ""
         print_info "Error Summary:"
         echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        cat "$ERROR_LOG" | while read line; do
-            echo -e "${RED}  $line${NC}"
-        done
+        if [ -f "$ERROR_LOG" ] && [ -s "$ERROR_LOG" ]; then
+            cat "$ERROR_LOG" | while read line; do
+                echo -e "${RED}  $line${NC}"
+            done
+        else
+            echo -e "${RED}  No detailed error information available${NC}"
+        fi
         echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo ""
         print_info "You can review the full error log with: ${BOLD}cat $ERROR_LOG${NC}"
@@ -154,12 +158,18 @@ print_info "Error log will be written to: ${BOLD}${ERROR_LOG}${NC}"
 echo ""
 
 # Run the installation script and pass the error log path
-if bash "$INSTALL_SCRIPT" "$ERROR_LOG"; then
+bash "$INSTALL_SCRIPT" "$ERROR_LOG"
+SUBSCRIPT_EXIT_CODE=$?
+
+if [ $SUBSCRIPT_EXIT_CODE -eq 0 ]; then
     echo ""
     print_success "Installation process completed for ${BOLD}${DISTRO}${NC}"
 else
     echo ""
     print_warning "Installation process completed with some issues for ${BOLD}${DISTRO}${NC}"
+    print_info "Installation script reported $SUBSCRIPT_EXIT_CODE error(s)"
+    # Add the subscript errors to our main error count
+    ERRORS=$((ERRORS + SUBSCRIPT_EXIT_CODE))
 fi
 
 # Check if validation script exists and offer to run it
