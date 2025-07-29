@@ -94,7 +94,7 @@ else
     exit 1
 fi
 
-INSTALL_SCRIPT="distros/${DISTRO}/install_script.sh"
+INSTALL_SCRIPT="$HOME/.dotfiles/distros/${DISTRO}/install_script.sh"
 
 print_info "Looking for installation script: ${BOLD}${INSTALL_SCRIPT}${NC}"
 
