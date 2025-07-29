@@ -7,3 +7,23 @@
 [credential "https://gist.github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
+
+[core]
+	editor = nvim
+	pager = delta
+
+[init]
+	defaultBranch = main
+
+[interactive]
+	diffFilter = delta --color-only
+
+[delta]
+	navigate = true
+	features = side-by-side line-numbers decorations
+
+[merge]
+	conflictStyle = diff3
+
+[diff]
+	colorMoved = default

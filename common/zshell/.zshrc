@@ -31,10 +31,21 @@ zinit light MichaelAquilina/zsh-you-should-use
 
 # Add in snippets
 zinit snippet OMZP::git
+zinit snippet OMZP::ubuntu
+zinit snippet OMZP::command-not-found
 zinit snippet OMZP::sudo
 zinit snippet OMZP::npm
 zinit snippet OMZP::docker-compose
 zinit snippet OMZP::docker
+zinit snippet OMZP::kubectl
+zinit snippet OMZP::kubectx
+zinit snippet OMZP::helm
+zinit snippet OMZP::python
+zinit snippet OMZP::pip
+zinit snippet OMZP::node
+zinit snippet OMZP::rust
+zinit snippet OMZP::golang
+zinit snippet OMZP::gh
 
 # Load completions
 autoload -U compinit && compinit
@@ -55,7 +66,7 @@ export FZF_DEFAULT_OPTS=" \
 
 # FZF Keybindings
 export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --line-range :500 {}'"
-export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always {} | head -200'"
+export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always --icons=always {} | head -200'"
 
 # FZF Function
 # Advance customization of fzf options via _fzf_comprun function
@@ -66,13 +77,12 @@ _fzf_comprun(){
 	shift
 
 	case "$command" in
-		cd)	fzf --preview 'eza --tree --color=always {} | head -200' "$@" ;;
+		cd)	fzf --preview 'eza --tree --color=always --icons=always {} | head -200' "$@" ;;
 		export|unset)	fzf --preview "eval 'echo \$' {}"	"$@" ;;
 		ssh)	fzf --preview 'dig {}'	"$@" 	;;
-		*)	fzf --preview "--preview 'bat -n --color=always --line-range :500 {}'"	"$@"	;;
+		*)	fzf --preview 'bat -n --color=always --line-range :500 {}'	"$@"	;;
 	esac
 }
-
 
 # Keybindings
 bindkey -e
@@ -100,6 +110,7 @@ zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
 # Aliases
 alias ls='eza --color=always --long --git --no-filesize --icons=always --no-time --no-user --no-permissions'
+alias tree='eza --tree --color=always --long --git --no-filesize --icons=always --no-time --no-user --no-permissions'
 alias leetcode='python3 create_leetcode.py'
 
 # Shell integrations
@@ -109,8 +120,24 @@ eval "$(zoxide init --cmd cd zsh)"
 # thefuck alias
 eval $(thefuck --alias)
 eval $(thefuck --alias fk)
+eval $(thefuck --alias shit)
+eval $(thefuck --alias ohno)
 
+#pfetch configs
+PF_INFO="ascii title os kernel uptime memory shell"
+PF_COL1=3
+PF_COL2=7
+PF_COL3=3
 
+# Bat (better cat) configurations
+export BAT_THEME=tokyonight_night
+
+# PATHS
+export PATH=$PATH:/usr/local/go/bin
+export PATH="$HOME/.cargo/bin:$PATH"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+## Cowsay and pfetch
+fortune -s | cowsay -f tux | lolcrab --custom "#fe8019,#fabd2f,#fbf1c7"  && pfetch
