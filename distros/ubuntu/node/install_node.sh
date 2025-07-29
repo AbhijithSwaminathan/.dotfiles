@@ -3,7 +3,7 @@
 
 # Get script directory and source common library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COMMON_LIB_DIR="$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")/lib"
+COMMON_LIB_DIR="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")/lib"
 source "$COMMON_LIB_DIR/common.sh"
 
 # Get error log file from parent script
