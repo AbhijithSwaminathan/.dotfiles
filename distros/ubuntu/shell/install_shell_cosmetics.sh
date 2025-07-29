@@ -504,5 +504,5 @@ fi
 print_success "Shell and terminal enhancements installation complete!"
 
 # Return non-zero exit code for error detection but don't exit hard
-return $ERRORS 2>/dev/null || exit $ERRORS
+return $ERRORS 2>/dev/null  
 
