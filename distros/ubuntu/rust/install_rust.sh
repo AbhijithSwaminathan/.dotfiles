@@ -1,7 +1,5 @@
 ## Install rust and cargo and validation the installation in ubuntu
 #!/bin/bash
-set -e
-set -o pipefail
 
 # Color codes for pretty printing
 RED='\033[0;31m'
@@ -21,6 +19,7 @@ RUST="🦀"
 
 # Error tracking
 ERRORS=0
+ERROR_LOG="/tmp/dotfiles_error.log"
 
 # Function to print colored output
 print_info() {
@@ -33,23 +32,13 @@ print_success() {
 
 print_error() {
     echo -e "${RED}${FAILURE}${NC} ${BOLD}$1${NC}"
+    echo "[ERROR] [$(date '+%Y-%m-%d %H:%M:%S')] Rust: $1" >> "$ERROR_LOG"
     ERRORS=$((ERRORS + 1))
 }
 
 print_warning() {
     echo -e "${YELLOW}${WARNING}${NC} ${BOLD}$1${NC}"
 }
-
-# Error handling function
-handle_error() {
-    local exit_code=$?
-    local line_number=$1
-    print_error "Error occurred in Rust installation at line $line_number (exit code: $exit_code)"
-    exit $exit_code
-}
-
-# Trap errors
-trap 'handle_error ${LINENO}' ERR
 
 # Function to safely execute commands
 safe_execute() {
@@ -90,7 +79,7 @@ if ! command -v rustup >/dev/null 2>&1; then
         print_success "Rust installer completed successfully"
     else
         print_error "Failed to download or install Rust"
-        exit 1
+        return 1
     fi
     
     # Load Rust environment
@@ -133,8 +122,9 @@ fi
 
 if [ $ERRORS -eq 0 ]; then
     print_success "Rust installation completed successfully"
-    exit 0
 else
     print_error "Rust installation completed with $ERRORS error(s)"
-    exit 1
 fi
+
+# Return non-zero exit code for error detection but don't exit hard
+return $ERRORS 2>/dev/null || exit $ERRORS

@@ -1,7 +1,5 @@
 # Install docker and docker compose and configure it in ubuntu
 #!/bin/bash
-set -e
-set -o pipefail
 
 # Color codes for pretty printing
 RED='\033[0;31m'
@@ -21,6 +19,7 @@ DOCKER="🐳"
 
 # Error tracking
 ERRORS=0
+ERROR_LOG="/tmp/dotfiles_error.log"
 
 # Function to print colored output
 print_info() {
@@ -33,23 +32,13 @@ print_success() {
 
 print_error() {
     echo -e "${RED}${FAILURE}${NC} ${BOLD}$1${NC}"
+    echo "[ERROR] [$(date '+%Y-%m-%d %H:%M:%S')] Docker: $1" >> "$ERROR_LOG"
     ERRORS=$((ERRORS + 1))
 }
 
 print_warning() {
     echo -e "${YELLOW}${WARNING}${NC} ${BOLD}$1${NC}"
 }
-
-# Error handling function
-handle_error() {
-    local exit_code=$?
-    local line_number=$1
-    print_error "Error occurred in Docker installation at line $line_number (exit code: $exit_code)"
-    exit $exit_code
-}
-
-# Trap errors
-trap 'handle_error ${LINENO}' ERR
 
 # Function to safely execute commands
 safe_execute() {
@@ -157,8 +146,9 @@ print_info "Installed Docker Compose version: ${BOLD}${DOCKER_COMPOSE_VERSION}${
 
 if [ $ERRORS -eq 0 ]; then
     print_success "Docker installation completed successfully"
-    exit 0
 else
     print_error "Docker installation completed with $ERRORS error(s)"
-    exit 1
 fi
+
+# Return non-zero exit code for error detection but don't exit hard
+return $ERRORS 2>/dev/null || exit $ERRORS

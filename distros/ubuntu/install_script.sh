@@ -1,8 +1,11 @@
 # Ubuntu installation script
 #!/bin/bash
 
-set -e
 set -o pipefail
+# Remove set -e to allow script to continue on errors
+
+# Get error log file from parent script
+ERROR_LOG="${1:-error.log}"
 
 # Color codes for pretty printing
 RED='\033[0;31m'
@@ -29,6 +32,14 @@ UBUNTU="🐧"
 ERRORS=0
 SCRIPT_DIR="$HOME/.dotfiles/"
 
+# Function to log errors
+log_error() {
+    local error_msg="$1"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "[$timestamp] [ubuntu-install] ERROR: $error_msg" >> "$ERROR_LOG"
+    ERRORS=$((ERRORS + 1))
+}
+
 # Function to print colored output
 print_info() {
     echo -e "${CYAN}${INFO}${NC} ${BOLD}$1${NC}"
@@ -40,7 +51,7 @@ print_success() {
 
 print_error() {
     echo -e "${RED}${FAILURE}${NC} ${BOLD}$1${NC}"
-    ERRORS=$((ERRORS + 1))
+    log_error "$1"
 }
 
 print_warning() {
@@ -210,11 +221,12 @@ if [ $ERRORS -eq 0 ]; then
     print_header "${SUCCESS} Ubuntu Installation Complete"
     print_success "All components have been installed successfully!"
     print_info "Run ${BOLD}distros/ubuntu/validate.sh${NC} to validate your installation"
-    exit 0
 else
     print_header "${FAILURE} Installation Completed with Errors"
     print_error "Installation completed with $ERRORS error(s)"
     print_warning "Some components may not have been installed correctly"
     print_info "Run ${BOLD}distros/ubuntu/validate.sh${NC} to check what needs to be fixed"
-    exit 1
 fi
+
+# Return non-zero exit code for error detection but don't exit hard
+return $ERRORS 2>/dev/null || exit $ERRORS

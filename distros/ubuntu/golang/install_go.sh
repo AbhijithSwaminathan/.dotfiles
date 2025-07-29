@@ -1,7 +1,5 @@
 ## install latest golang version and validate the installation in ubuntu
 #!/bin/bash
-set -e
-set -o pipefail
 
 # Color codes for pretty printing
 RED='\033[0;31m'
@@ -21,6 +19,7 @@ GOLANG="🐹"
 
 # Error tracking
 ERRORS=0
+ERROR_LOG="/tmp/dotfiles_error.log"
 GO_VERSION="1.20.5"
 GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
 
@@ -35,25 +34,13 @@ print_success() {
 
 print_error() {
     echo -e "${RED}${FAILURE}${NC} ${BOLD}$1${NC}"
+    echo "[ERROR] [$(date '+%Y-%m-%d %H:%M:%S')] Go: $1" >> "$ERROR_LOG"
     ERRORS=$((ERRORS + 1))
 }
 
 print_warning() {
     echo -e "${YELLOW}${WARNING}${NC} ${BOLD}$1${NC}"
 }
-
-# Error handling function
-handle_error() {
-    local exit_code=$?
-    local line_number=$1
-    print_error "Error occurred in Go installation at line $line_number (exit code: $exit_code)"
-    # Clean up on error
-    [ -f "$GO_TARBALL" ] && rm -f "$GO_TARBALL"
-    exit $exit_code
-}
-
-# Trap errors
-trap 'handle_error ${LINENO}' ERR
 
 # Function to safely execute commands
 safe_execute() {
@@ -95,13 +82,13 @@ if ! command -v go >/dev/null 2>&1; then
         print_success "Go tarball downloaded successfully"
     else
         print_error "Failed to download Go tarball"
-        exit 1
+        return 1
     fi
     
     # Verify download
     if [ ! -f "$GO_TARBALL" ]; then
         print_error "Go tarball not found after download"
-        exit 1
+        return 1
     fi
     
     # Remove existing Go installation if present
@@ -109,7 +96,7 @@ if ! command -v go >/dev/null 2>&1; then
         print_warning "Removing existing Go installation..."
         if ! sudo rm -rf /usr/local/go; then
             print_error "Failed to remove existing Go installation"
-            exit 1
+            return 1
         fi
     fi
     
@@ -153,8 +140,9 @@ print_info "GOPATH: ${BOLD}${GOPATH}${NC}"
 if [ $ERRORS -eq 0 ]; then
     print_success "Go installation completed successfully"
     print_info "Note: You may need to add '/usr/local/go/bin' to your PATH in your shell profile"
-    exit 0
 else
     print_error "Go installation completed with $ERRORS error(s)"
-    exit 1
 fi
+
+# Return non-zero exit code for error detection but don't exit hard
+return $ERRORS 2>/dev/null || exit $ERRORS

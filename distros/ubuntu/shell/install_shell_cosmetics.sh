@@ -1,9 +1,6 @@
 ## Install ZSHELL and other components
 #!/bin/bash
 
-set -e
-set -o pipefail
-
 # Color codes for pretty printing
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -27,6 +24,7 @@ LINK="🔗"
 
 # Error tracking
 ERRORS=0
+ERROR_LOG="/tmp/dotfiles_error.log"
 SCRIPT_DIR="$HOME/.dotfiles/"
 
 # Function to print colored output
@@ -40,6 +38,7 @@ print_success() {
 
 print_error() {
     echo -e "${RED}${FAILURE}${NC} ${BOLD}$1${NC}"
+    echo "[ERROR] [$(date '+%Y-%m-%d %H:%M:%S')] Shell: $1" >> "$ERROR_LOG"
     ERRORS=$((ERRORS + 1))
 }
 
@@ -50,20 +49,6 @@ print_warning() {
 print_subsection() {
     echo -e "\n${BOLD}${PURPLE}── $1 ──${NC}\n"
 }
-
-# Error handling function
-handle_error() {
-    local exit_code=$?
-    local line_number=$1
-    print_error "Error occurred in shell cosmetics installation at line $line_number (exit code: $exit_code)"
-    # Clean up temporary files on error
-    [ -f "master.zip" ] && rm -f master.zip
-    [ -d "pfetch-master" ] && rm -rf pfetch-master
-    exit $exit_code
-}
-
-# Trap errors
-trap 'handle_error ${LINENO}' ERR
 
 # Function to safely execute commands
 safe_execute() {
@@ -289,11 +274,9 @@ fi
 if [ $ERRORS -eq 0 ]; then
     print_success "Shell and terminal enhancements installation completed successfully!"
     print_info "Note: You may need to log out and log back in for all changes to take effect"
-    exit 0
 else
     print_error "Shell and terminal enhancements installation completed with $ERRORS error(s)"
     print_warning "Some components may not have been installed or configured correctly"
-    exit 1
 fi
 if [ "$SHELL" != "$(which zsh)" ]; then
     print_info "Changing default shell to ZSH..."
@@ -495,7 +478,7 @@ if ! command -v tailscale &> /dev/null; then
         print_success "Tailscale CLI installed successfully"
     else
         print_error "Failed to install Tailscale CLI"
-        exit 1
+        return 1
     fi
 else
     print_success "Tailscale CLI is already installed"
@@ -510,11 +493,14 @@ if ! command -v gh &> /dev/null; then
         print_success "GitHub CLI installed successfully"
     else
         print_error "Failed to install GitHub CLI"
-        exit 1
+        return 1
     fi
 else
     print_success "GitHub CLI is already installed"
 fi
 
 print_success "Shell and terminal enhancements installation complete!"
+
+# Return non-zero exit code for error detection but don't exit hard
+return $ERRORS 2>/dev/null || exit $ERRORS
 

@@ -8,8 +8,8 @@ if [ -z "$BASH_VERSION" ]; then
     exit 1
 fi
 
-set -e
 set -o pipefail
+# Remove set -e to allow scripts to continue on errors
 
 # Color codes for pretty printing
 RED='\033[0;31m'
@@ -29,8 +29,22 @@ INFO="ℹ️"
 SEARCH="🔍"
 ROCKET="🚀"
 
-# Error tracking
+# Error tracking and logging
 ERRORS=0
+ERROR_LOG="error.log"
+SCRIPT_START_TIME=$(date)
+
+# Clear previous error log
+> "$ERROR_LOG"
+
+# Function to log errors
+log_error() {
+    local error_msg="$1"
+    local script_name="${2:-main}"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "[$timestamp] [$script_name] ERROR: $error_msg" >> "$ERROR_LOG"
+    ERRORS=$((ERRORS + 1))
+}
 
 # Function to print colored output
 print_info() {
@@ -43,7 +57,7 @@ print_success() {
 
 print_error() {
     echo -e "${RED}${FAILURE}${NC} ${BOLD}$1${NC}"
-    ERRORS=$((ERRORS + 1))
+    log_error "$1" "main"
 }
 
 print_warning() {
@@ -56,17 +70,29 @@ print_header() {
     echo -e "${BOLD}${BLUE}════════════════════════════════════════${NC}\n"
 }
 
-# Error handling function
-handle_error() {
-    local exit_code=$?
-    local line_number=$1
-    print_error "Error occurred in main installation script at line $line_number (exit code: $exit_code)"
-    print_error "Installation failed. Please check the error messages above."
-    exit $exit_code
+# Function to show final error summary
+show_error_summary() {
+    if [ $ERRORS -gt 0 ]; then
+        print_header "${FAILURE} Installation Summary"
+        print_error "Installation completed with $ERRORS error(s)"
+        print_warning "Error details have been logged to: ${BOLD}$ERROR_LOG${NC}"
+        echo ""
+        print_info "Error Summary:"
+        echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        cat "$ERROR_LOG" | while read line; do
+            echo -e "${RED}  $line${NC}"
+        done
+        echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        print_info "You can review the full error log with: ${BOLD}cat $ERROR_LOG${NC}"
+        print_info "Try fixing the issues and re-running the installation"
+    else
+        print_header "${SUCCESS} Installation Summary"
+        print_success "All components installed successfully with no errors!"
+        # Remove empty error log
+        [ -f "$ERROR_LOG" ] && rm "$ERROR_LOG"
+    fi
 }
-
-# Trap errors
-trap 'handle_error ${LINENO}' ERR
 
 # Start installation
 print_header "${ROCKET} Starting Dotfiles Installation"
@@ -91,6 +117,7 @@ if [ -f /etc/os-release ]; then
 else
     print_error "Unsupported distribution - /etc/os-release not found"
     print_error "This script requires a Linux distribution with /etc/os-release"
+    show_error_summary
     exit 1
 fi
 
@@ -109,6 +136,7 @@ if [ ! -f "$INSTALL_SCRIPT" ]; then
             print_info "  - $distro_name"
         fi
     done
+    show_error_summary
     exit 1
 fi
 
@@ -117,7 +145,6 @@ if [ ! -x "$INSTALL_SCRIPT" ]; then
     print_warning "Making installation script executable..."
     if ! chmod +x "$INSTALL_SCRIPT"; then
         print_error "Failed to make installation script executable"
-        exit 1
     fi
 fi
 
@@ -126,33 +153,37 @@ print_info "Starting installation process..."
 echo ""
 
 # Run the installation script
-if bash "$INSTALL_SCRIPT"; then
+if bash "$INSTALL_SCRIPT" "$ERROR_LOG"; then
     echo ""
-    print_success "Installation completed successfully for ${BOLD}${DISTRO}${NC}"
-    
-    # Check if validation script exists and offer to run it
-    VALIDATE_SCRIPT="distros/${DISTRO}/validate.sh"
-    if [ -f "$VALIDATE_SCRIPT" ]; then
-        print_info "Validation script found: ${BOLD}${VALIDATE_SCRIPT}${NC}"
-        print_info "Run ${BOLD}bash ${VALIDATE_SCRIPT}${NC} to validate your installation"
-        
-        # Optionally auto-run validation (uncomment if desired)
-        # print_info "Running validation automatically..."
-        # if bash "$VALIDATE_SCRIPT"; then
-        #     print_success "Validation completed successfully!"
-        # else
-        #     print_warning "Validation completed with warnings - check output above"
-        # fi
-    else
-        print_warning "No validation script found for ${BOLD}${DISTRO}${NC}"
-    fi
-    
-    exit 0
+    print_success "Installation process completed for ${BOLD}${DISTRO}${NC}"
 else
     echo ""
-    print_error "Installation failed for ${BOLD}${DISTRO}${NC}"
-    print_error "Please check the error messages above for details"
-    print_info "You can try running the installation script directly:"
-    print_info "  ${BOLD}bash ${INSTALL_SCRIPT}${NC}"
-    exit 1
+    print_warning "Installation process completed with some issues for ${BOLD}${DISTRO}${NC}"
+fi
+
+# Check if validation script exists and offer to run it
+VALIDATE_SCRIPT="distros/${DISTRO}/validate.sh"
+if [ -f "$VALIDATE_SCRIPT" ]; then
+    print_info "Validation script found: ${BOLD}${VALIDATE_SCRIPT}${NC}"
+    print_info "Running validation to check installation status..."
+    echo ""
+    
+    if bash "$VALIDATE_SCRIPT"; then
+        print_success "Validation completed successfully!"
+    else
+        print_warning "Validation completed with warnings - some components may need attention"
+    fi
+else
+    print_warning "No validation script found for ${BOLD}${DISTRO}${NC}"
+fi
+
+# Show final summary
+echo ""
+show_error_summary
+
+# Exit with appropriate code but don't use hard exit
+if [ $ERRORS -eq 0 ]; then
+    print_info "Installation completed successfully!"
+else
+    print_info "Installation completed with errors. Check the summary above."
 fi

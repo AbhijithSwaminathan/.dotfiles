@@ -1,9 +1,6 @@
 ## Install latest node.js version along with npm using nvm and validate the installation in ubuntu
 #!/bin/bash
 
-set -e
-set -o pipefail
-
 # Color codes for pretty printing
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -22,6 +19,7 @@ NODEJS="📗"
 
 # Error tracking
 ERRORS=0
+ERROR_LOG="/tmp/dotfiles_error.log"
 
 # Function to print colored output
 print_info() {
@@ -34,23 +32,13 @@ print_success() {
 
 print_error() {
     echo -e "${RED}${FAILURE}${NC} ${BOLD}$1${NC}"
+    echo "[ERROR] [$(date '+%Y-%m-%d %H:%M:%S')] Node.js: $1" >> "$ERROR_LOG"
     ERRORS=$((ERRORS + 1))
 }
 
 print_warning() {
     echo -e "${YELLOW}${WARNING}${NC} ${BOLD}$1${NC}"
 }
-
-# Error handling function
-handle_error() {
-    local exit_code=$?
-    local line_number=$1
-    print_error "Error occurred in Node.js installation at line $line_number (exit code: $exit_code)"
-    exit $exit_code
-}
-
-# Trap errors
-trap 'handle_error ${LINENO}' ERR
 
 # Function to safely execute commands
 safe_execute() {
@@ -91,7 +79,7 @@ if [ ! -d "$HOME/.nvm" ]; then
         print_success "nvm downloaded and installed successfully"
     else
         print_error "Failed to download or install nvm"
-        exit 1
+        return 1
     fi
     
     # Load nvm
@@ -101,7 +89,7 @@ if [ ! -d "$HOME/.nvm" ]; then
         print_success "nvm loaded successfully"
     else
         print_error "Failed to load nvm"
-        exit 1
+        return 1
     fi
 else
     print_success "nvm is already installed"
@@ -112,7 +100,7 @@ fi
 # Verify nvm is working
 if ! command -v nvm >/dev/null 2>&1; then
     print_error "nvm is not working properly"
-    exit 1
+    return 1
 fi
 
 # Install latest node.js version along with npm
@@ -140,8 +128,9 @@ fi
 
 if [ $ERRORS -eq 0 ]; then
     print_success "Node.js installation completed successfully"
-    exit 0
 else
     print_error "Node.js installation completed with $ERRORS error(s)"
-    exit 1
 fi
+
+# Return non-zero exit code for error detection but don't exit hard
+return $ERRORS 2>/dev/null || exit $ERRORS
