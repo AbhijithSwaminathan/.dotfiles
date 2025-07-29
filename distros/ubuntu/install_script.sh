@@ -180,30 +180,30 @@ print_info "Installing Node.js, C++, Rust, and Go..."
 
 ## Install Node.js
 print_subsection "Installing Node.js"
-safe_run_script "distros/ubuntu/node/install_node.sh" "Node.js installation"
+safe_run_script "$SCRIPT_DIR/distros/ubuntu/node/install_node.sh" "Node.js installation"
 
 ## Install C++
 print_subsection "Installing C++ Development Tools"
-safe_run_script "distros/ubuntu/cpp/install_cpp.sh" "C++ development tools installation"
+safe_run_script "$SCRIPT_DIR/distros/ubuntu/cpp/install_cpp.sh" "C++ development tools installation"
 
 ## Install Rust
 print_subsection "Installing Rust"
-safe_run_script "distros/ubuntu/rust/install_rust.sh" "Rust installation"
+safe_run_script "$SCRIPT_DIR/distros/ubuntu/rust/install_rust.sh" "Rust installation"
 
 ## Install Go
 print_subsection "Installing Go"
-safe_run_script "distros/ubuntu/golang/install_go.sh" "Go installation"
+safe_run_script "$SCRIPT_DIR/distros/ubuntu/golang/install_go.sh" "Go installation"
 
 # Install Tools
 print_header "${TOOL} Installing Development Tools"
 
 ## Install Docker
 print_subsection "Installing Docker"
-safe_run_script "distros/ubuntu/docker/install_docker.sh" "Docker installation"
+safe_run_script "$SCRIPT_DIR/distros/ubuntu/docker/install_docker.sh" "Docker installation"
 
 ## Install Shell Cosmetics
 print_header "${CONFIG} Installing Shell & Terminal Enhancements"
-safe_run_script "distros/ubuntu/shell/install_shell_cosmetics.sh" "Shell and terminal enhancements"
+safe_run_script "$SCRIPT_DIR/distros/ubuntu/shell/install_shell_cosmetics.sh" "Shell and terminal enhancements"
 
 # Final status check
 if [ $ERRORS -eq 0 ]; then

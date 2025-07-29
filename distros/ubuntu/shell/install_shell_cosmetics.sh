@@ -27,7 +27,7 @@ LINK="🔗"
 
 # Error tracking
 ERRORS=0
-SCRIPT_DIR="$(pwd)"
+SCRIPT_DIR="$HOME/.dotfiles/"
 
 # Function to print colored output
 print_info() {
@@ -394,7 +394,7 @@ fi
 print_info "Configuring bat themes..."
 mkdir -p "$(bat --config-dir)/themes"
 ##### Copy all items in common/themes to bat themes directory
-cp -r "$(pwd)/common/themes/"* "$(bat --config-dir)/themes/"
+cp -r "$SCRIPT_DIR/common/themes/"* "$(bat --config-dir)/themes/"
 ##### Build bat cache
 bat cache --build
 print_success "bat themes configured successfully"
@@ -455,7 +455,7 @@ if [ -d ~/.config/nvim ]; then
     rm -rf ~/.config/nvim
 fi
 mkdir -p ~/.config/nvim
-ln -s "$(pwd)/common/nvim" ~/.config/nvim
+ln -s "$SCRIPT_DIR/common/nvim" ~/.config/nvim
 print_success "Neovim configuration symlinked successfully"
 
 ### Symlink zshrc in common/zshell in repo, if .zshrc exists then remove and symlink
@@ -464,7 +464,7 @@ if [ -f ~/.zshrc ]; then
     print_warning "Removing existing .zshrc..."
     rm ~/.zshrc
 fi
-ln -s "$(pwd)/common/zshell/.zshrc" ~/.zshrc
+ln -s "$SCRIPT_DIR/common/zshell/.zshrc" ~/.zshrc
 print_success "ZSH configuration symlinked successfully"
 
 ### Symlink common/.p10k.zsh in repo, if .p10k.zsh exists then remove and symlink
@@ -473,7 +473,7 @@ if [ -f ~/.p10k.zsh ]; then
     print_warning "Removing existing .p10k.zsh..."
     rm ~/.p10k.zsh
 fi
-ln -s "$(pwd)/common/zshell/.p10k.zsh" ~/.p10k.zsh
+ln -s "$SCRIPT_DIR/common/zshell/.p10k.zsh" ~/.p10k.zsh
 print_success "Powerlevel10k configuration symlinked successfully"
 
 # Source .zshrc file
