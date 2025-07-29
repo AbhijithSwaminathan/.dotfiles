@@ -45,17 +45,17 @@ else
 fi
 
 ### Install lolcrab cargo install lolcrab
-if ! command -v lolcrab &> /dev/null; then
-    # Check if cargo is available
-    if ! command -v cargo &> /dev/null; then
-        print_error "Cargo is not available - Rust must be installed first"
-        return 1
-    fi
-    safe_execute "Installing lolcrab" "cargo install lolcrab"
-    verify_command "lolcrab" "lolcrab"
-else
-    print_success "lolcrab is already installed"
-fi
+# if ! command -v lolcrab &> /dev/null; then
+#     # Check if cargo is available
+#     if ! command -v cargo &> /dev/null; then
+#         print_error "Cargo is not available - Rust must be installed first"
+#         return 1
+#     fi
+#     safe_execute "Installing lolcrab" "cargo install lolcrab"
+#     verify_command "lolcrab" "lolcrab"
+# else
+#     print_success "lolcrab is already installed"
+# fi
 
 ### Install pfetch
 if ! command -v pfetch &> /dev/null; then
@@ -338,33 +338,6 @@ fi
 ## Configuration Setup
 print_subsection "${CONFIG} Setting up Configuration Files"
 
-### Symlink common/nvim folder and all its content in repo to ~/.config/nvim if it exists remove and symlink
-print_info "Setting up Neovim configuration..."
-if [ -d ~/.config/nvim ]; then
-    print_warning "Removing existing nvim config..."
-    rm -rf ~/.config/nvim
-fi
-mkdir -p ~/.config/nvim
-ln -s "$SCRIPT_DIR/common/nvim" ~/.config/nvim
-print_success "Neovim configuration symlinked successfully"
-
-### Symlink zshrc in common/zshell in repo, if .zshrc exists then remove and symlink
-print_info "Setting up ZSH configuration..."
-if [ -f ~/.zshrc ]; then
-    print_warning "Removing existing .zshrc..."
-    rm ~/.zshrc
-fi
-ln -s "$SCRIPT_DIR/common/zshell/.zshrc" ~/.zshrc
-print_success "ZSH configuration symlinked successfully"
-
-### Symlink common/.p10k.zsh in repo, if .p10k.zsh exists then remove and symlink
-print_info "Setting up Powerlevel10k configuration..."
-if [ -f ~/.p10k.zsh ]; then
-    print_warning "Removing existing .p10k.zsh..."
-    rm ~/.p10k.zsh
-fi
-ln -s "$SCRIPT_DIR/common/zshell/.p10k.zsh" ~/.p10k.zsh
-print_success "Powerlevel10k configuration symlinked successfully"
 
 # Source .zshrc file
 print_info "Sourcing .zshrc file..."

@@ -119,3 +119,8 @@ safe_execute "Cleaning package cache" "sudo apt autoclean"
 
 # Finalize script
 finalize_script "Ubuntu Installation" "$UBUNTU"
+
+# Print next steps
+## install lolcrab
+print_info "Next steps:"
+print_info "1. Install lolcrab for additional shell cosmetics: 'cargo install lolcrab'"
