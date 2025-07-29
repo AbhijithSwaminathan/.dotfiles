@@ -20,6 +20,9 @@ WARNING="⚠️"
 INFO="ℹ️"
 NODEJS="📗"
 
+# Error tracking
+ERRORS=0
+
 # Function to print colored output
 print_info() {
     echo -e "${CYAN}${INFO}${NC} ${BOLD}$1${NC}"
@@ -31,46 +34,114 @@ print_success() {
 
 print_error() {
     echo -e "${RED}${FAILURE}${NC} ${BOLD}$1${NC}"
+    ERRORS=$((ERRORS + 1))
 }
 
 print_warning() {
     echo -e "${YELLOW}${WARNING}${NC} ${BOLD}$1${NC}"
 }
 
+# Error handling function
+handle_error() {
+    local exit_code=$?
+    local line_number=$1
+    print_error "Error occurred in Node.js installation at line $line_number (exit code: $exit_code)"
+    exit $exit_code
+}
+
+# Trap errors
+trap 'handle_error ${LINENO}' ERR
+
+# Function to safely execute commands
+safe_execute() {
+    local description="$1"
+    shift
+    local cmd="$@"
+    
+    print_info "$description"
+    if eval "$cmd"; then
+        print_success "$description completed successfully"
+        return 0
+    else
+        print_error "$description failed"
+        return 1
+    fi
+}
+
+# Function to verify command installation
+verify_command() {
+    local cmd="$1"
+    local name="$2"
+    
+    if command -v "$cmd" >/dev/null 2>&1; then
+        print_success "$name is available and working"
+        return 0
+    else
+        print_error "$name is not available or not working"
+        return 1
+    fi
+}
+
 # Install nvm (Node Version Manager)
 if [ ! -d "$HOME/.nvm" ]; then
     print_info "${NODEJS} Installing nvm (Node Version Manager)..."
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+    
+    # Download and install nvm
+    if curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash; then
+        print_success "nvm downloaded and installed successfully"
+    else
+        print_error "Failed to download or install nvm"
+        exit 1
+    fi
+    
+    # Load nvm
     export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-    print_success "nvm installed successfully"
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        source "$NVM_DIR/nvm.sh"
+        print_success "nvm loaded successfully"
+    else
+        print_error "Failed to load nvm"
+        exit 1
+    fi
 else
     print_success "nvm is already installed"
     export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+    [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"  # This loads nvm
 fi
 
-# Install latest node.js version along with npm
-print_info "Installing latest Node.js version..."
-nvm install node
-print_success "Node.js installed successfully"
-
-# Validate the installation
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
-    print_success "Node.js and npm have been installed successfully"
-else
-    print_error "Failed to install Node.js and npm"
+# Verify nvm is working
+if ! command -v nvm >/dev/null 2>&1; then
+    print_error "nvm is not working properly"
     exit 1
 fi
 
+# Install latest node.js version along with npm
+safe_execute "Installing latest Node.js version" "nvm install node"
+
+# Set default node version
+safe_execute "Setting default Node.js version" "nvm alias default node"
+
+# Verify installations
+verify_command "node" "Node.js"
+verify_command "npm" "npm"
+
 # Display the installed versions
-print_info "Installed Node.js version: ${BOLD}$(node -v)${NC}"
-print_info "Installed npm version: ${BOLD}$(npm -v)${NC}"
+NODE_VERSION=$(node -v 2>/dev/null || echo "unknown")
+NPM_VERSION=$(npm -v 2>/dev/null || echo "unknown")
+
+print_info "Installed Node.js version: ${BOLD}${NODE_VERSION}${NC}"
+print_info "Installed npm version: ${BOLD}${NPM_VERSION}${NC}"
 
 # Clean up
-## Remove the nvm installation script if it exists
 if [ -f "$HOME/.nvm/install.sh" ]; then
+    print_info "Cleaning up installation files..."
     rm "$HOME/.nvm/install.sh"
 fi
-print_success "Node.js installation complete"
-exit 0
+
+if [ $ERRORS -eq 0 ]; then
+    print_success "Node.js installation completed successfully"
+    exit 0
+else
+    print_error "Node.js installation completed with $ERRORS error(s)"
+    exit 1
+fi

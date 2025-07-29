@@ -19,6 +19,11 @@ WARNING="⚠️"
 INFO="ℹ️"
 GOLANG="🐹"
 
+# Error tracking
+ERRORS=0
+GO_VERSION="1.20.5"
+GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
+
 # Function to print colored output
 print_info() {
     echo -e "${CYAN}${INFO}${NC} ${BOLD}$1${NC}"
@@ -30,20 +35,91 @@ print_success() {
 
 print_error() {
     echo -e "${RED}${FAILURE}${NC} ${BOLD}$1${NC}"
+    ERRORS=$((ERRORS + 1))
 }
 
 print_warning() {
     echo -e "${YELLOW}${WARNING}${NC} ${BOLD}$1${NC}"
 }
 
+# Error handling function
+handle_error() {
+    local exit_code=$?
+    local line_number=$1
+    print_error "Error occurred in Go installation at line $line_number (exit code: $exit_code)"
+    # Clean up on error
+    [ -f "$GO_TARBALL" ] && rm -f "$GO_TARBALL"
+    exit $exit_code
+}
+
+# Trap errors
+trap 'handle_error ${LINENO}' ERR
+
+# Function to safely execute commands
+safe_execute() {
+    local description="$1"
+    shift
+    local cmd="$@"
+    
+    print_info "$description"
+    if eval "$cmd"; then
+        print_success "$description completed successfully"
+        return 0
+    else
+        print_error "$description failed"
+        return 1
+    fi
+}
+
+# Function to verify command installation
+verify_command() {
+    local cmd="$1"
+    local name="$2"
+    
+    if command -v "$cmd" >/dev/null 2>&1; then
+        print_success "$name is available and working"
+        return 0
+    else
+        print_error "$name is not available or not working"
+        return 1
+    fi
+}
+
 # Install Go using the official tarball
 if ! command -v go >/dev/null 2>&1; then
     print_info "${GOLANG} Installing Go..."
-    print_info "Downloading Go 1.20.5..."
-    wget https://go.dev/dl/go1.20.5.linux-amd64.tar.gz
-    print_info "Extracting Go to /usr/local..."
-    sudo tar -C /usr/local -xzf go1.20.5.linux-amd64.tar.gz
-    rm go1.20.5.linux-amd64.tar.gz
+    
+    # Download Go
+    print_info "Downloading Go ${GO_VERSION}..."
+    if wget -q "https://go.dev/dl/${GO_TARBALL}"; then
+        print_success "Go tarball downloaded successfully"
+    else
+        print_error "Failed to download Go tarball"
+        exit 1
+    fi
+    
+    # Verify download
+    if [ ! -f "$GO_TARBALL" ]; then
+        print_error "Go tarball not found after download"
+        exit 1
+    fi
+    
+    # Remove existing Go installation if present
+    if [ -d "/usr/local/go" ]; then
+        print_warning "Removing existing Go installation..."
+        if ! sudo rm -rf /usr/local/go; then
+            print_error "Failed to remove existing Go installation"
+            exit 1
+        fi
+    fi
+    
+    # Extract Go
+    safe_execute "Extracting Go to /usr/local" "sudo tar -C /usr/local -xzf $GO_TARBALL"
+    
+    # Clean up tarball
+    safe_execute "Cleaning up downloaded files" "rm -f $GO_TARBALL"
+    
+    # Add to PATH for current session
     export PATH=$PATH:/usr/local/go/bin
     print_success "Go installed successfully"
 else
@@ -51,21 +127,34 @@ else
     export PATH=$PATH:/usr/local/go/bin
 fi
 
-# Validate the installation
-if command -v go >/dev/null 2>&1; then
-    print_success "Go has been installed successfully"
+# Verify installation
+verify_command "go" "Go"
+
+# Test basic functionality
+print_info "Testing Go compilation..."
+if echo 'package main; func main(){println("Hello, World!")}' | go run - 2>/dev/null; then
+    print_success "Go compilation test passed"
 else
-    print_error "Failed to install Go"
+    print_error "Go compilation test failed"
+fi
+
+# Display the installed version with error handling
+GO_VERSION_OUTPUT=$(go version 2>/dev/null || echo "Version check failed")
+print_info "Installed Go version: ${BOLD}${GO_VERSION_OUTPUT}${NC}"
+
+# Verify Go environment
+print_info "Checking Go environment..."
+GOROOT=$(go env GOROOT 2>/dev/null || echo "unknown")
+GOPATH=$(go env GOPATH 2>/dev/null || echo "unknown")
+
+print_info "GOROOT: ${BOLD}${GOROOT}${NC}"
+print_info "GOPATH: ${BOLD}${GOPATH}${NC}"
+
+if [ $ERRORS -eq 0 ]; then
+    print_success "Go installation completed successfully"
+    print_info "Note: You may need to add '/usr/local/go/bin' to your PATH in your shell profile"
+    exit 0
+else
+    print_error "Go installation completed with $ERRORS error(s)"
     exit 1
 fi
-
-# Display the installed version
-print_info "Installed Go version: ${BOLD}$(go version | head -n 1)${NC}"
-
-# Clean up
-## Remove the tarball if it exists
-if [ -f go1.20.5.linux-amd64.tar.gz ]; then
-    rm go1.20.5.linux-amd64.tar.gz
-fi
-print_success "Go installation complete"
-exit 0

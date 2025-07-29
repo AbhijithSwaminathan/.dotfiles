@@ -19,6 +19,9 @@ WARNING="⚠️"
 INFO="ℹ️"
 CPP="⚙️"
 
+# Error tracking
+ERRORS=0
+
 # Function to print colored output
 print_info() {
     echo -e "${CYAN}${INFO}${NC} ${BOLD}$1${NC}"
@@ -30,51 +33,95 @@ print_success() {
 
 print_error() {
     echo -e "${RED}${FAILURE}${NC} ${BOLD}$1${NC}"
+    ERRORS=$((ERRORS + 1))
 }
 
 print_warning() {
     echo -e "${YELLOW}${WARNING}${NC} ${BOLD}$1${NC}"
 }
 
+# Error handling function
+handle_error() {
+    local exit_code=$?
+    local line_number=$1
+    print_error "Error occurred in C++ installation at line $line_number (exit code: $exit_code)"
+    exit $exit_code
+}
+
+# Trap errors
+trap 'handle_error ${LINENO}' ERR
+
+# Function to safely execute commands
+safe_execute() {
+    local description="$1"
+    shift
+    local cmd="$@"
+    
+    print_info "$description"
+    if eval "$cmd"; then
+        print_success "$description completed successfully"
+        return 0
+    else
+        print_error "$description failed"
+        return 1
+    fi
+}
+
+# Function to verify command installation
+verify_command() {
+    local cmd="$1"
+    local name="$2"
+    
+    if command -v "$cmd" >/dev/null 2>&1; then
+        print_success "$name is available and working"
+        return 0
+    else
+        print_error "$name is not available or not working"
+        return 1
+    fi
+}
+
 # Install C++ 20 version using a package manager
 if ! command -v g++ >/dev/null 2>&1; then
-    print_info "${CPP} Installing g++ compiler..."
-    sudo apt-get update
-    sudo apt-get install -y g++-11
-    print_success "g++ installed successfully"
+    safe_execute "${CPP} Installing g++ compiler" "sudo apt-get install -y g++-11"
+    
+    # Verify installation
+    verify_command "g++" "g++ compiler"
 else
     print_success "g++ is already installed"
 fi
 
-# Validate the installation
-if command -v g++ >/dev/null 2>&1; then
-    print_success "g++ has been installed successfully"
-else
-    print_error "Failed to install g++"
-    exit 1
-fi
-
 # Install CMake
 if ! command -v cmake >/dev/null 2>&1; then
-    print_info "Installing CMake..."
-    sudo apt-get install -y cmake
-    print_success "CMake installed successfully"
+    safe_execute "Installing CMake" "sudo apt-get install -y cmake"
+    
+    # Verify installation
+    verify_command "cmake" "CMake"
 else
     print_success "CMake is already installed"
 fi
 
-# Validate the installation
-if command -v cmake >/dev/null 2>&1; then
-    print_success "CMake has been installed successfully"
+# Display the installed versions with error handling
+print_info "Checking installed versions..."
+
+GCC_VERSION=$(g++ --version 2>/dev/null | head -n 1 || echo "Version check failed")
+CMAKE_VERSION=$(cmake --version 2>/dev/null | head -n 1 || echo "Version check failed")
+
+print_info "Installed g++ version: ${BOLD}${GCC_VERSION}${NC}"
+print_info "Installed CMake version: ${BOLD}${CMAKE_VERSION}${NC}"
+
+# Test basic functionality
+print_info "Testing g++ compilation..."
+if echo 'int main(){return 0;}' | g++ -x c++ -o /tmp/test_cpp - 2>/dev/null && rm -f /tmp/test_cpp; then
+    print_success "g++ compilation test passed"
 else
-    print_error "Failed to install CMake"
-    exit 1
+    print_error "g++ compilation test failed"
 fi
 
-# Display the installed versions
-print_info "Installed g++ version: ${BOLD}$(g++ --version | head -n 1)${NC}"
-print_info "Installed CMake version: ${BOLD}$(cmake --version | head -n 1)${NC}"
-
-# Clean up
-print_success "C++ development tools installation complete"
-exit 0
+if [ $ERRORS -eq 0 ]; then
+    print_success "C++ development tools installation completed successfully"
+    exit 0
+else
+    print_error "C++ development tools installation completed with $ERRORS error(s)"
+    exit 1
+fi
