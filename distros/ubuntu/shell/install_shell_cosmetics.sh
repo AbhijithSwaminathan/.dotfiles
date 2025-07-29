@@ -45,17 +45,17 @@ else
 fi
 
 ### Install lolcrab cargo install lolcrab
-# if ! command -v lolcrab &> /dev/null; then
-#     # Check if cargo is available
-#     if ! command -v cargo &> /dev/null; then
-#         print_error "Cargo is not available - Rust must be installed first"
-#         return 1
-#     fi
-#     safe_execute "Installing lolcrab" "cargo install lolcrab"
-#     verify_command "lolcrab" "lolcrab"
-# else
-#     print_success "lolcrab is already installed"
-# fi
+if ! command -v lolcrab &> /dev/null; then
+    # Check if cargo is available
+    if ! command -v cargo &> /dev/null; then
+        print_error "Cargo is not available - Rust must be installed first"
+        return 1
+    fi
+    safe_execute "Installing lolcrab" "cargo install lolcrab"
+    verify_command "lolcrab" "lolcrab"
+else
+    print_success "lolcrab is already installed"
+fi
 
 ### Install pfetch
 if ! command -v pfetch &> /dev/null; then
