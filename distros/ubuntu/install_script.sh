@@ -68,18 +68,6 @@ print_subsection() {
     echo -e "\n${BOLD}${PURPLE}── $1 ──${NC}\n"
 }
 
-# Error handling function
-handle_error() {
-    local exit_code=$?
-    local line_number=$1
-    print_error "Error occurred in script at line $line_number (exit code: $exit_code)"
-    print_error "Installation failed. Please check the error messages above."
-    exit $exit_code
-}
-
-# Trap errors
-trap 'handle_error ${LINENO}' ERR
-
 # Function to safely execute commands
 safe_execute() {
     local description="$1"
@@ -149,13 +137,18 @@ safe_run_script() {
     fi
     
     print_info "Running $description..."
-    # Pass the ERROR_LOG path to the subscript
-    if bash "$script_path" "$ERROR_LOG"; then
+    # Pass the ERROR_LOG path to the subscript and capture its error count
+    bash "$script_path" "$ERROR_LOG"
+    local subscript_errors=$?
+    
+    if [ $subscript_errors -eq 0 ]; then
         print_success "$description completed successfully"
         return 0
     else
-        print_error "$description failed"
-        return 1
+        print_error "$description failed with $subscript_errors error(s)"
+        # Add the subscript errors to our total error count
+        ERRORS=$((ERRORS + subscript_errors))
+        return $subscript_errors
     fi
 }
 
@@ -176,7 +169,7 @@ if ! command -v git &> /dev/null; then
     # Verify git installation
     if ! command -v git &> /dev/null; then
         print_error "Git installation verification failed"
-        exit 1
+        return 1
     fi
 else
     print_success "Git is already installed"
@@ -229,5 +222,5 @@ else
     print_info "Run ${BOLD}distros/ubuntu/validate.sh${NC} to check what needs to be fixed"
 fi
 
-# Return non-zero exit code for error detection but don't exit hard
-return $ERRORS 2>/dev/null
+# Return the error count for parent script to capture
+return $ERRORS

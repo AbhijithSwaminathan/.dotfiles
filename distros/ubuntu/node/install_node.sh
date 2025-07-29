@@ -134,5 +134,5 @@ else
     print_error "Node.js installation completed with $ERRORS error(s)"
 fi
 
-# Return non-zero exit code for error detection but don't exit hard
-return $ERRORS 2>/dev/null  
+# Return the error count for parent script to capture
+return $ERRORS  
