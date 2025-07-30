@@ -60,6 +60,3 @@ print_info "Installed Cargo version: ${BOLD}${CARGO_VERSION}${NC}"
 
 # Finalize script
 finalize_script "Rust Installation" "$RUST"
-
-# Return the error count for parent script to capture
-return $ERRORS  

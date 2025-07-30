@@ -39,13 +39,27 @@ fi
 
 ### Install lolcrab cargo install lolcrab
 if ! command -v lolcrab &> /dev/null; then
-    # Check if cargo is available
+    # Check if cargo is available in current session
     if ! command -v cargo &> /dev/null; then
-        print_error "Cargo is not available - Rust must be installed first"
-        return 1
+        # Try to source Rust environment and run in a new shell session
+        print_info "Cargo not found in current session, trying to install lolcrab in new shell with Rust environment..."
+        safe_execute "Installing lolcrab with Rust environment" \
+            "bash -c 'source \$HOME/.cargo/env 2>/dev/null || true; if command -v cargo &>/dev/null; then cargo install lolcrab; else echo \"Cargo still not available - Rust must be installed first\" >&2; exit 1; fi'"
+    else
+        safe_execute "Installing lolcrab" "cargo install lolcrab"
     fi
-    safe_execute "Installing lolcrab" "cargo install lolcrab"
-    verify_command "lolcrab" "lolcrab"
+    
+    # Verify installation - also try in new shell if not found in current session
+    if ! command -v lolcrab &> /dev/null; then
+        # Try to verify in new shell with Rust environment
+        if bash -c 'source $HOME/.cargo/env 2>/dev/null || true; command -v lolcrab' &>/dev/null; then
+            print_success "lolcrab installed successfully (available in new shell sessions)"
+        else
+            print_error "Failed to install lolcrab - Rust/Cargo may not be properly installed"
+        fi
+    else
+        verify_command "lolcrab" "lolcrab"
+    fi
 else
     print_success "lolcrab is already installed"
 fi
@@ -96,7 +110,7 @@ if ! command -v bat &> /dev/null; then
     print_info "Installing bat..."
     
     # Download bat .deb package
-    safe_execute "Downloading bat package" "wget https://github.com/sharkdp/bat/releases/download/v0.25.0/bat-musl_0.25.0_amd64.deb"
+    safe_execute "Downloading bat package" "wget https://github.com/sharkdp/bat/releases/download/v0.25.0/bat-musl_0.25.0_musl-linux-amd64.deb"
     
     # Install the package
     safe_execute "Installing bat package" "sudo dpkg -i bat-musl_0.25.0_amd64.deb"
@@ -121,6 +135,9 @@ fi
 ### Install thefuck
 if ! command -v thefuck &> /dev/null; then
     print_info "Installing thefuck..."
+
+    # Adding deadsnakes repository for Python 3.11
+    safe_execute "Adding deadsnakes repository" "sudo add-apt-repository ppa:deadsnakes/ppa -y"
     
     # Install Python 3.11 and required packages
     safe_execute "Installing Python 3.11 and distutils" "sudo apt update && sudo apt install -y python3.11 python3.11-distutils"
@@ -224,6 +241,15 @@ if ! command -v gh &> /dev/null; then
     verify_command "gh" "GitHub CLI"
 else
     print_success "GitHub CLI is already installed"
+fi
+
+### Souce ~/.zshrc
+if [ -f "$HOME/.zshrc" ]; then
+    print_info "Sourcing ~/.zshrc to apply changes..."
+    source "$HOME/.zshrc"
+    print_success "Sourced ~/.zshrc successfully"
+else
+    print_warning "No ~/.zshrc file found to source"
 fi
 
 ### Make ZSH the default shell
