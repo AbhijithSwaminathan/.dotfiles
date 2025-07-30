@@ -64,11 +64,26 @@ verify_command "go" "Go"
 
 # Test basic functionality
 print_info "Testing Go compilation..."
-if echo 'package main; func main(){println("Hello, World!")}' | go run - 2>/dev/null; then
+# Create a temporary Go file for testing
+TEMP_GO_FILE=$(mktemp --suffix=.go)
+cat > "$TEMP_GO_FILE" << 'EOF'
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello, World!")
+}
+EOF
+
+if go run "$TEMP_GO_FILE" >/dev/null 2>&1; then
     print_success "Go compilation test passed"
 else
     print_error "Go compilation test failed"
 fi
+
+# Clean up temporary file
+rm -f "$TEMP_GO_FILE"
 
 # Display the installed version with error handling
 GO_VERSION_OUTPUT=$(go version 2>/dev/null || echo "Version check failed")
