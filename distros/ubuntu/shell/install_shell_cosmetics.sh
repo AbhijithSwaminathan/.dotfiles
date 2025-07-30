@@ -140,14 +140,14 @@ if ! command -v thefuck &> /dev/null; then
     safe_execute "Adding deadsnakes repository" "sudo add-apt-repository ppa:deadsnakes/ppa -y"
     
     # Install Python 3.11 and required packages
-    safe_execute "Installing Python 3.11 and distutils" "sudo apt update && sudo apt install -y python3.11 python3.11-distutils"
+    safe_execute "Installing Python 3.11 and distutils" "sudo apt update && sudo apt install -y python3.11 python3.11-distutils python3.11-venv"
     
     # Install pip for Python 3.11
     safe_execute "Installing pip for Python 3.11" "python3.11 -m ensurepip --upgrade"
     
     # Install pipx
     safe_execute "Installing pipx" "python3.11 -m pip install --user pipx"
-    safe_execute "Ensuring pipx path" "python3.11 -m pipx ensurepath"
+    safe_execute "Ensuring pipx path" "python3.11 -m pipx ensurepath --force"
     
     # Install thefuck using pipx with Python 3.11
     safe_execute "Installing thefuck with pipx" "pipx install --python python3.11 thefuck"
