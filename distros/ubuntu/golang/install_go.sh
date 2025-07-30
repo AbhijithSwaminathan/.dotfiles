@@ -89,6 +89,22 @@ rm -f "$TEMP_GO_FILE"
 GO_VERSION_OUTPUT=$(go version 2>/dev/null || echo "Version check failed")
 print_info "Installed Go version: ${BOLD}${GO_VERSION_OUTPUT}${NC}"
 
+## Add Go environment variables to .zshrc; check if already exists
+ZSHRC_FILE="$HOME/.zshrc"
+if [ -f "$ZSHRC_FILE" ]; then
+    if ! grep -q "export GOPATH=\"\$HOME/go\"" "$ZSHRC_FILE"; then
+        print_info "Adding Go environment variables to $ZSHRC_FILE..."
+        echo 'export GOPATH="$HOME/go"' >> "$ZSHRC_FILE"
+        echo 'export GOROOT="/usr/local/go"' >> "$ZSHRC_FILE"
+        echo 'export PATH="$PATH:/usr/local/go/bin"' >> "$ZSHRC_FILE"
+        print_success "Go environment variables added to $ZSHRC_FILE"
+    else
+        print_info "Go environment variables already exist in $ZSHRC_FILE"
+    fi
+else
+    print_warning "$ZSHRC_FILE not found, skipping Go environment variable addition"
+fi
+
 # Verify Go environment
 print_info "Checking Go environment..."
 GOROOT=$(go env GOROOT 2>/dev/null || echo "unknown")
