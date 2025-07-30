@@ -113,6 +113,10 @@ PF_COL3=3
 # Bat (better cat) configurations
 export BAT_THEME=tokyonight_night
 
+## Go Environment variable
+export GOPATH="$HOME/go"
+export GOROOT="/usr/local/go"
+
 # PATHS
 export PATH=$PATH:/usr/local/go/bin
 export PATH="$HOME/.cargo/bin:$PATH"

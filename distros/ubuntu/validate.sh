@@ -72,11 +72,39 @@ run_validation validate_command_new_session "zsh" "ZSH" "ZSH Shell"
 run_validation validate_shell_config "zsh"
 
 print_subsection "Terminal Enhancement Tools"
+# Validate commands individually with specific checks for problematic ones
+run_validation validate_command_new_session "zsh" "ZSH Shell"
+run_validation validate_command_new_session "fortune" "Fortune"
+
+# Special handling for cowsay - test with a simple message
+print_info "Validating cowsay..."
+if command -v cowsay >/dev/null 2>&1; then
+    if echo "test" | cowsay >/dev/null 2>&1; then
+        print_success "cowsay is working correctly"
+    else
+        print_error "cowsay command failed"
+        ((VALIDATION_ERRORS++))
+    fi
+else
+    print_error "cowsay is not installed or not in PATH"
+    ((VALIDATION_ERRORS++))
+fi
+
+# Special handling for lolcrab - test with help flag or simple message
+print_info "Validating lolcrab..."
+if command -v lolcrab >/dev/null 2>&1; then
+    if echo "test" | lolcrab >/dev/null 2>&1 || lolcrab -h >/dev/null 2>&1; then
+        print_success "lolcrab is working correctly"
+    else
+        print_error "lolcrab command failed"
+        ((VALIDATION_ERRORS++))
+    fi
+else
+    print_error "lolcrab is not installed or not in PATH"
+    ((VALIDATION_ERRORS++))
+fi
+
 run_validation validate_session_commands \
-    "zsh:ZSH Shell" \
-    "fortune:fortune" \
-    "cowsay:cowsay" \
-    "lolcrab --version:lolcrab" \
     "pfetch:pfetch" \
     "fzf:fzf" \
     "fd:fd-find" \
