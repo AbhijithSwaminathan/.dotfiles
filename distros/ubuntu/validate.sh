@@ -76,7 +76,7 @@ run_validation validate_session_commands \
     "zsh:ZSH Shell" \
     "fortune:fortune" \
     "cowsay:cowsay" \
-    "lolcrab:lolcrab" \
+    "lolcrab --version:lolcrab" \
     "pfetch:pfetch" \
     "fzf:fzf" \
     "fd:fd-find" \
