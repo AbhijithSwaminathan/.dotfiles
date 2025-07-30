@@ -116,6 +116,9 @@ if [ ! -d "$HOME/.config/fzf-git.sh" ]; then
     fi
 fi
 
+#### alias fd=fdfind
+alias fd=fdfind
+
 ### Install bat
 if ! command -v bat &> /dev/null; then
     print_info "Installing bat..."
