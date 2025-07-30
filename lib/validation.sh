@@ -15,12 +15,40 @@ validate_command() {
     
     print_info "Validating $name..."
     
-    if ! command -v "$cmd" >/dev/null 2>&1; then
+    # Check command in current session first
+    local cmd_found_current=false
+    if command -v "$cmd" >/dev/null 2>&1; then
+        cmd_found_current=true
+    fi
+    
+    # Check command in new shell session with fresh environment
+    local cmd_found_new=false
+    if bash -c "
+        # Source common shell configurations to get updated PATH
+        [ -f \$HOME/.bashrc ] && source \$HOME/.bashrc 2>/dev/null || true
+        [ -f \$HOME/.zshrc ] && source \$HOME/.zshrc 2>/dev/null || true
+        [ -f \$HOME/.cargo/env ] && source \$HOME/.cargo/env 2>/dev/null || true
+        export PATH=\"\$HOME/.local/bin:\$PATH\"
+        command -v $cmd
+    " >/dev/null 2>&1; then
+        cmd_found_new=true
+    fi
+    
+    # Determine if command is available
+    if [ "$cmd_found_current" = true ]; then
+        # Available in current session
+        local cmd_path=$(command -v "$cmd")
+    elif [ "$cmd_found_new" = true ]; then
+        # Available in new session but not current
+        print_success "$name is installed (available in new shell sessions)"
+        return 0
+    else
+        # Not found in either session
         print_error "$name is not installed or not in PATH"
         return 1
     fi
     
-    # If version checking is requested
+    # If version checking is requested and command is available in current session
     if [ -n "$expected_version" ]; then
         local actual_version
         case "$cmd" in
@@ -54,6 +82,27 @@ validate_command() {
                 fi
                 ;;
         esac
+            "cargo")
+                actual_version=$(cargo --version 2>/dev/null | cut -d' ' -f2)
+                ;;
+            "go")
+                actual_version=$(go version 2>/dev/null | cut -d' ' -f3 | cut -d'o' -f2)
+                ;;
+            "docker")
+                actual_version=$(docker --version 2>/dev/null | cut -d' ' -f3 | cut -d',' -f1)
+                ;;
+            "g++"|"gcc")
+                actual_version=$(g++ --version 2>/dev/null | head -1 | cut -d' ' -f4)
+                ;;
+            *)
+                # Generic version check - try common patterns
+                if $cmd --version >/dev/null 2>&1; then
+                    actual_version=$($cmd --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+                else
+                    actual_version="unknown"
+                fi
+                ;;
+        esac
         
         if [ -n "$actual_version" ] && [ "$actual_version" != "unknown" ]; then
             print_success "$name $actual_version is installed (expected: $expected_version)"
@@ -65,6 +114,71 @@ validate_command() {
     fi
     
     return 0
+}
+
+# Function to validate commands specifically in new shell sessions (for recently installed tools)
+validate_command_new_session() {
+    local cmd="$1"
+    local name="${2:-$cmd}"
+    local description="${3:-$name}"
+    
+    print_info "Validating $description in new shell session..."
+    
+    # Check command in new shell session with all environment sources
+    if bash -c "
+        # Source all possible shell configurations
+        [ -f \$HOME/.bashrc ] && source \$HOME/.bashrc 2>/dev/null || true
+        [ -f \$HOME/.zshrc ] && source \$HOME/.zshrc 2>/dev/null || true
+        [ -f \$HOME/.profile ] && source \$HOME/.profile 2>/dev/null || true
+        [ -f \$HOME/.cargo/env ] && source \$HOME/.cargo/env 2>/dev/null || true
+        
+        # Add common paths where tools might be installed
+        export PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:/usr/local/bin:\$PATH\"
+        
+        # Check if command exists and try to get version
+        if command -v $cmd >/dev/null 2>&1; then
+            echo \"Command found: \$(command -v $cmd)\"
+            if $cmd --version >/dev/null 2>&1; then
+                echo \"Version: \$($cmd --version 2>/dev/null | head -1)\"
+            fi
+            exit 0
+        else
+            exit 1
+        fi
+    " 2>/dev/null; then
+        print_success "$description is available in new shell sessions"
+        return 0
+    else
+        print_error "$description is not available even in new shell sessions"
+        return 1
+    fi
+}
+
+# Function to validate multiple commands that might be in new sessions
+validate_session_commands() {
+    local commands=("$@")
+    local failed_count=0
+    
+    print_info "Validating commands in new shell sessions..."
+    
+    for cmd_info in "${commands[@]}"; do
+        # Parse command info (format: "command:name" or just "command")
+        local cmd_name=$(echo "$cmd_info" | cut -d: -f1)
+        local display_name=$(echo "$cmd_info" | cut -d: -f2)
+        [ "$display_name" = "$cmd_name" ] && display_name="$cmd_name"
+        
+        if ! validate_command_new_session "$cmd_name" "$display_name"; then
+            ((failed_count++))
+        fi
+    done
+    
+    if [ $failed_count -eq 0 ]; then
+        print_success "All commands validated successfully"
+        return 0
+    else
+        print_warning "$failed_count command(s) failed validation"
+        return 1
+    fi
 }
 
 # Function to validate if a file or directory exists
@@ -319,15 +433,65 @@ run_validation_suite() {
             validate_command "g++" "C++ Compiler"
             validate_command "docker" "Docker"
             ;;
+        "development-new-session")
+            # Validate development tools in new shell sessions (for same-session installations)
+            validate_session_commands \
+                "node:Node.js" \
+                "npm:NPM" \
+                "rustc:Rust Compiler" \
+                "cargo:Cargo" \
+                "go:Go" \
+                "g++:C++ Compiler" \
+                "docker:Docker" \
+                "lolcrab:lolcrab" \
+                "thefuck:thefuck" \
+                "bat:bat" \
+                "fzf:fzf" \
+                "eza:eza" \
+                "zoxide:zoxide" \
+                "delta:git-delta" \
+                "tldr:tldr" \
+                "rg:ripgrep" \
+                "pfetch:pfetch" \
+                "nvim:Neovim" \
+                "zsh:ZSH Shell" \
+                "tailscale:Tailscale CLI" \
+                "gh:GitHub CLI"
+            ;;
         "system")
             validate_shell_config "bash"
             validate_env_var "HOME"
             validate_env_var "PATH"
             validate_user_group "sudo" "$USER"
             ;;
+        "shell-tools")
+            # Validate shell enhancement tools specifically
+            validate_session_commands \
+                "zsh:ZSH Shell" \
+                "fortune:fortune" \
+                "cowsay:cowsay" \
+                "lolcrab:lolcrab" \
+                "pfetch:pfetch" \
+                "fzf:fzf" \
+                "eza:eza" \
+                "zoxide:zoxide" \
+                "delta:git-delta" \
+                "tldr:tldr" \
+                "rg:ripgrep" \
+                "bat:bat" \
+                "thefuck:thefuck" \
+                "nvim:Neovim" \
+                "tailscale:Tailscale CLI" \
+                "gh:GitHub CLI"
+            ;;
         "full")
             run_validation_suite "basic"
             run_validation_suite "development"
+            run_validation_suite "system"
+            ;;
+        "full-new-session")
+            run_validation_suite "basic"
+            run_validation_suite "development-new-session"
             run_validation_suite "system"
             ;;
         *)

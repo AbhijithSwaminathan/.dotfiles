@@ -27,7 +27,7 @@ validate_package "vim" "Vim"
 validate_package "build-essential" "Build Essential"
 
 # Development tools validation
-run_validation_suite "development"
+run_validation_suite "development-new-session"
 
 # Container Tools
 print_header "${TOOL} Container Tools"
@@ -36,31 +36,22 @@ validate_command "docker" "Docker"
 validate_command "docker-compose" "Docker Compose"  
 validate_user_group "docker" "$USER"
 
-# Shell & Terminal Tools
+# Shell & Terminal Tools - Use new session validation for recently installed tools
 print_header "${TOOL} Shell & Terminal Tools"
 
 print_subsection "Shell Configuration"
 validate_command "zsh" "ZSH"
 validate_shell_config "zsh"
 
-print_subsection "Terminal Enhancement Tools"
-validate_command "fortune" "Fortune"
-validate_command "cowsay" "Cowsay" 
-validate_command "lolcrab" "Lolcrab"
-validate_command "pfetch" "Pfetch"
-validate_command "fzf" "FZF"
-validate_command "eza" "Eza"
-validate_command "zoxide" "Zoxide"
-validate_command "bat" "Bat"
-validate_command "delta" "Git Delta"
-validate_command "tldr" "TLDR"
-validate_command "thefuck" "TheFuck"
-validate_command "rg" "Ripgrep"
+print_subsection "Terminal Enhancement Tools (New Session Validation)"
+# Use the new session validation for all shell tools that might have been installed in same session
+run_validation_suite "shell-tools"
 
 # Text Editor
 print_header "${TOOL} Text Editor"
 
-validate_command "nvim" "Neovim"
+# Validate Neovim using new session check since it might have been just installed
+validate_command_new_session "nvim" "Neovim" "Neovim Text Editor"
 
 # Configuration Files
 print_header "${CONFIG} Configuration Files"
