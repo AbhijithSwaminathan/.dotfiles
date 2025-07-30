@@ -113,13 +113,13 @@ if ! command -v bat &> /dev/null; then
     safe_execute "Downloading bat package" "wget https://github.com/sharkdp/bat/releases/download/v0.25.0/bat-musl_0.25.0_musl-linux-amd64.deb"
     
     # Install the package
-    safe_execute "Installing bat package" "sudo dpkg -i bat-musl_0.25.0_amd64.deb"
+    safe_execute "Installing bat package" "sudo dpkg -i bat-musl_0.25.0_musl-linux-amd64.deb"
     
     # Fix any dependency issues
     safe_execute "Fixing bat dependencies" "sudo apt-get install -f"
     
     # Clean up downloaded package
-    safe_execute "Cleaning up bat installation files" "rm -f bat-musl_0.25.0_amd64.deb"
+    safe_execute "Cleaning up bat installation files" "rm -f bat-musl_0.25.0_musl-linux-amd64.deb"
     
     # Verify installation
     verify_command "bat" "bat"
