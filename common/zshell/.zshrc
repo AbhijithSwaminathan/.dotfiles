@@ -56,43 +56,11 @@ zinit cdreplay -q
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
-# FZF Theme
-
-export FZF_DEFAULT_OPTS=" \
- --color=bg:#051519,fg:#b8b1a9,hl:#1a8d63\
- --color=bg+:#3d3d3d,fg+:#b8b1a9,hl+:#2fc859\
- --color=info:#39a7a2,border:#8ed0ce,prompt:#92d3a2\
- --color=pointer:#051519,marker:#fb3d66,spinner:#fb3d66,header:#f8818e"
-
-# FZF Keybindings
-export FZF_DEFAULT_COMMAND='fdfind --hidden --strip-cwd-prefix --exclude .git --exclude node_modules'
-export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-export FZF_ALT_C_COMMAND='fdfind --type d --hidden --strip-cwd-prefix --exclude .git --exclude node_modules'
-export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --line-range :500 {}'"
-export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always --icons=always {} | head -200'"
-
-# FZF Function
-
-_fzf_compgen_path() {
-    fdfind --hidden --exclude .git node_modules . "$1"
-}
-
-_fzf_compgen_dir() {
-    fdfind --type d --hidden --exclude .git node_modules . "$1"
-}
-
-_fzf_comprun(){
-   local command=$1
-   shift
-   case "$command" in
-       cd) fzf --preview 'eza --tree --color=always {} | head -200' "$@" ;;
-       export|unset)   fzf --preview "eval 'echo \$' {}"   "$@" ;;
-       ssh)    fzf --preview 'dig {}'  "$@"    ;;
-       *)  fzf --preview 'bat -n --color=always --line-range :500 {}' "$@" ;;
-   esac
-}
-
-source $HOME/.config/fzf-git.sh/fzf-git.sh
+# FZF Configuration
+# Load enhanced FZF configuration from separate file
+if [[ -f "$HOME/.config/fzf-config.zsh" ]]; then
+    source "$HOME/.config/fzf-config.zsh"
+fi
 
 # Keybindings
 bindkey -e

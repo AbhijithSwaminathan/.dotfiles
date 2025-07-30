@@ -20,13 +20,19 @@ run_validation() {
     
     if ! "$validation_func" "$@"; then
         ((VALIDATION_ERRORS++))
+        return 1
     fi
+    return 0
 }
 
 display_script_header "Ubuntu Dotfiles Validation" "$SEARCH"
 
 # Run comprehensive validation suites
-run_validation run_validation_suite "basic"
+print_header "${SEARCH} Basic System Validation"
+run_validation validate_command "bash" "Bash Shell"
+run_validation validate_command "git" "Git"
+run_validation validate_path "$HOME" "directory" "Home Directory"
+run_validation validate_path "$HOME/.dotfiles" "directory" "Dotfiles Directory"
 
 print_header "${PACKAGE} Package Validation"
 
@@ -42,30 +48,50 @@ run_validation validate_package "unzip" "Unzip"
 run_validation validate_package "software-properties-common" "Software Properties Common"
 
 # Development tools validation
-run_validation run_validation_suite "development-new-session"
+print_header "${TOOL} Development Tools"
+run_validation validate_session_commands \
+    "node:Node.js" \
+    "npm:NPM" \
+    "rustc:Rust Compiler" \
+    "cargo:Cargo" \
+    "go:Go" \
+    "g++:C++ Compiler" \
+    "docker:Docker"
 
 # Container Tools
 print_header "${TOOL} Container Tools"
-
 run_validation validate_command_new_session "docker" "Docker" "Docker Engine"
 run_validation validate_command_new_session "docker-compose" "Docker Compose" "Docker Compose"
 run_validation validate_user_group "docker" "$USER"
 
-# Shell & Terminal Tools - Use new session validation for recently installed tools
+# Shell & Terminal Tools
 print_header "${TOOL} Shell & Terminal Tools"
 
 print_subsection "Shell Configuration"
 run_validation validate_command_new_session "zsh" "ZSH" "ZSH Shell"
 run_validation validate_shell_config "zsh"
 
-print_subsection "Terminal Enhancement Tools (New Session Validation)"
-# Use the new session validation for all shell tools that might have been installed in same session
-run_validation run_validation_suite "shell-tools"
+print_subsection "Terminal Enhancement Tools"
+run_validation validate_session_commands \
+    "zsh:ZSH Shell" \
+    "fortune:fortune" \
+    "cowsay:cowsay" \
+    "lolcrab:lolcrab" \
+    "pfetch:pfetch" \
+    "fzf:fzf" \
+    "eza:eza" \
+    "zoxide:zoxide" \
+    "delta:git-delta" \
+    "tldr:tldr" \
+    "rg:ripgrep" \
+    "bat:bat" \
+    "thefuck:thefuck" \
+    "nvim:Neovim" \
+    "tailscale:Tailscale CLI" \
+    "gh:GitHub CLI"
 
 # Text Editor
 print_header "${TOOL} Text Editor"
-
-# Validate Neovim using new session check since it might have been just installed
 run_validation validate_command_new_session "nvim" "Neovim" "Neovim Text Editor"
 
 # Configuration Files
@@ -99,6 +125,7 @@ run_validation validate_command_new_session "pipx" "pipx" "pipx Package Manager"
 
 # Programming Language Environments
 print_header "${TOOL} Programming Language Environments"
+
 print_subsection "Go Environment"
 if run_validation validate_command_new_session "go" "Go" "Go Programming Language"; then
     # Additional Go environment validation

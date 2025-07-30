@@ -82,27 +82,6 @@ validate_command() {
                 fi
                 ;;
         esac
-            "cargo")
-                actual_version=$(cargo --version 2>/dev/null | cut -d' ' -f2)
-                ;;
-            "go")
-                actual_version=$(go version 2>/dev/null | cut -d' ' -f3 | cut -d'o' -f2)
-                ;;
-            "docker")
-                actual_version=$(docker --version 2>/dev/null | cut -d' ' -f3 | cut -d',' -f1)
-                ;;
-            "g++"|"gcc")
-                actual_version=$(g++ --version 2>/dev/null | head -1 | cut -d' ' -f4)
-                ;;
-            *)
-                # Generic version check - try common patterns
-                if $cmd --version >/dev/null 2>&1; then
-                    actual_version=$($cmd --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-                else
-                    actual_version="unknown"
-                fi
-                ;;
-        esac
         
         if [ -n "$actual_version" ] && [ "$actual_version" != "unknown" ]; then
             print_success "$name $actual_version is installed (expected: $expected_version)"
@@ -442,21 +421,7 @@ run_validation_suite() {
                 "cargo:Cargo" \
                 "go:Go" \
                 "g++:C++ Compiler" \
-                "docker:Docker" \
-                "lolcrab:lolcrab" \
-                "thefuck:thefuck" \
-                "bat:bat" \
-                "fzf:fzf" \
-                "eza:eza" \
-                "zoxide:zoxide" \
-                "delta:git-delta" \
-                "tldr:tldr" \
-                "rg:ripgrep" \
-                "pfetch:pfetch" \
-                "nvim:Neovim" \
-                "zsh:ZSH Shell" \
-                "tailscale:Tailscale CLI" \
-                "gh:GitHub CLI"
+                "docker:Docker"
             ;;
         "system")
             validate_shell_config "bash"

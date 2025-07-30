@@ -92,7 +92,7 @@ else
 fi
 
 ### Install terminal tools
-for tool in "fzf" "fd-find" "eza" "zoxide" "delta:git-delta" "tldr" "rg:ripgrep"; do
+for tool in "fd-find" "eza" "zoxide" "delta:git-delta" "tldr" "rg:ripgrep"; do
     tool_name=$(echo "$tool" | cut -d: -f1)
     package_name=$(echo "$tool" | cut -d: -f2)
     [ "$package_name" = "$tool_name" ] && package_name="$tool_name"
@@ -105,15 +105,57 @@ for tool in "fzf" "fd-find" "eza" "zoxide" "delta:git-delta" "tldr" "rg:ripgrep"
     fi
 done
 
-### FZF Extras
-#### clone the repo https://github.com/junegunn/fzf-git.sh.git to $HOME/.config/fzf-git.sh/fzf-git.sh
-if [ ! -d "$HOME/.config/fzf-git.sh" ]; then
-    print_info "Cloning fzf-git.sh repository..."
-    if git clone https://github.com/junegunn/fzf-git.sh.git "$HOME/.config/fzf-git.sh"; then
-        print_success "fzf-git.sh cloned successfully"
+### Install fzf from git
+#### git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+#### ~/.fzf/install
+if [ ! -d "$HOME/.fzf" ]; then
+    print_info "Installing fzf..."
+    if git clone --depth 1 https://github.com/junegunn/fzf.git "$HOME/.fzf"; then
+        print_success "fzf cloned successfully"
     else
-        print_error "Failed to clone fzf-git.sh"
+        print_error "Failed to clone fzf"
+        return 1
     fi
+    if "$HOME/.fzf/install"; then
+        print_success "fzf installed successfully"
+    else
+        print_error "Failed to install fzf"
+        return 1
+    fi
+fi
+## Verify fzf installation
+if command -v fzf &> /dev/null; then
+    print_success "fzf is installed and working"
+else
+    print_error "fzf installation failed"
+    return 1
+fi
+
+### Remove cloned fzf directory if it exists
+if [ -d "$HOME/.fzf" ]; then
+    print_info "Cleaning up fzf installation files..."
+    if rm -rf "$HOME/.fzf"; then
+        print_success "fzf installation files cleaned up"
+    else
+        print_error "Failed to clean up fzf installation files"
+    fi
+else
+    print_warning "No fzf installation files found to clean up"
+fi
+
+### FZF Extras
+#### Clone fzf-git.sh repository for enhanced git integration
+FZF_GIT_DIR="$HOME/.config/fzf-git.sh"
+if [ ! -d "$FZF_GIT_DIR" ]; then
+    print_info "Setting up fzf-git.sh for enhanced git integration..."
+    if safe_execute "Creating fzf-git config directory" "mkdir -p \"$HOME/.config\"" && \
+       safe_execute "Cloning fzf-git.sh repository" "git clone https://github.com/junegunn/fzf-git.sh.git \"$FZF_GIT_DIR\""; then
+        print_success "fzf-git.sh setup completed"
+    else
+        print_error "Failed to setup fzf-git.sh"
+    fi
+else
+    print_success "fzf-git.sh is already configured"
 fi
 
 #### alias fd=fdfind
@@ -124,16 +166,16 @@ if ! command -v bat &> /dev/null; then
     print_info "Installing bat..."
     
     # Download bat .deb package
-    safe_execute "Downloading bat package" "wget https://github.com/sharkdp/bat/releases/download/v0.25.0/bat-musl_0.25.0_musl-linux-amd64.deb"
+    safe_execute "Downloading bat package" "wget https://github.com/sharkdp/bat/releases/download/v0.25.0/bat_0.25.0_amd64.deb"
     
     # Install the package
-    safe_execute "Installing bat package" "sudo dpkg -i bat-musl_0.25.0_musl-linux-amd64.deb"
+    safe_execute "Installing bat package" "sudo dpkg -i bat_0.25.0_amd64.deb"
     
     # Fix any dependency issues
     safe_execute "Fixing bat dependencies" "sudo apt-get install -f"
     
     # Clean up downloaded package
-    safe_execute "Cleaning up bat installation files" "rm -f bat-musl_0.25.0_musl-linux-amd64.deb"
+    safe_execute "Cleaning up bat installation files" "rm -f bat_0.25.0_amd64.deb"
     
     # Verify installation
     verify_command "bat" "bat"
@@ -246,6 +288,15 @@ if [ -f "$DOTFILES_DIR/common/zshell/.p10k.zsh" ]; then
     safe_symlink "$DOTFILES_DIR/common/zshell/.p10k.zsh" "$HOME/.p10k.zsh" "Powerlevel10k configuration"
 else
     print_error "Powerlevel10k configuration file not found: $DOTFILES_DIR/common/zshell/.p10k.zsh"
+fi
+
+### Symlink FZF configuration
+if [ -f "$DOTFILES_DIR/common/zshell/fzf-config.zsh" ]; then
+    # Create .config directory if it doesn't exist
+    safe_execute "Creating .config directory" "mkdir -p \"$HOME/.config\""
+    safe_symlink "$DOTFILES_DIR/common/zshell/fzf-config.zsh" "$HOME/.config/fzf-config.zsh" "FZF configuration"
+else
+    print_error "FZF configuration file not found: $DOTFILES_DIR/common/zshell/fzf-config.zsh"
 fi
 
 # Install Tailscale CLI
