@@ -120,6 +120,8 @@ if [ -f "$HOME/.gitconfig" ]; then
     else
         print_warning "Git user configuration may need to be set (name/email)"
     fi
+else
+    print_warning "Git configuration file not found - may need to be created or symlinked"
 fi
 
 print_subsection "Shell Aliases and Functions"
@@ -140,12 +142,20 @@ if command -v zsh >/dev/null 2>&1; then
     else
         print_warning "thefuck aliases may not be configured"
     fi
+else
+    print_warning "ZSH not available - skipping alias validation"
 fi
 
 print_subsection "Shell Configuration"
 run_validation validate_symlink "$HOME/.zshrc" "$DOTFILES_DIR/common/zshell/.zshrc" "ZSH config"
 run_validation validate_symlink "$HOME/.p10k.zsh" "$DOTFILES_DIR/common/zshell/.p10k.zsh" "Powerlevel10k config"
-run_validation validate_symlink "$HOME/.config/fzf-config.zsh" "$DOTFILES_DIR/common/zshell/fzf-config.zsh" "FZF config"
+
+# Check for FZF config symlink
+if [ -f "$HOME/.config/fzf-config.zsh" ]; then
+    run_validation validate_symlink "$HOME/.config/fzf-config.zsh" "$DOTFILES_DIR/common/zshell/fzf-config.zsh" "FZF config"
+else
+    print_warning "FZF configuration file not found - may need to be symlinked"
+fi
 
 print_subsection "FZF Integration"
 run_validation validate_path "$HOME/.config/fzf-git.sh" "directory" "FZF Git integration"
@@ -155,7 +165,7 @@ run_validation validate_path "$HOME/.config/fzf-git.sh/fzf-git.sh" "file" "FZF G
 if [ -f "$HOME/.config/fzf-config.zsh" ]; then
     print_info "Validating FZF configuration functions..."
     # Test if FZF functions are available in new zsh session
-    if zsh -c 'source ~/.config/fzf-config.zsh && type _fzf_comprun >/dev/null 2>&1'; then
+    if command -v zsh >/dev/null 2>&1 && zsh -c 'source ~/.zshrc 2>/dev/null && source ~/.config/fzf-config.zsh 2>/dev/null && type _fzf_comprun >/dev/null 2>&1'; then
         print_success "FZF completion functions are loaded correctly"
     else
         print_warning "FZF completion functions may not be loading properly"

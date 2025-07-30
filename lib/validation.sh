@@ -103,16 +103,32 @@ validate_command_new_session() {
     
     print_info "Validating $description in new shell session..."
     
+    # Try to use zsh if available, fallback to bash
+    local shell_cmd="bash"
+    if command -v zsh >/dev/null 2>&1; then
+        shell_cmd="zsh"
+    fi
+    
     # Check command in new shell session with all environment sources
-    if bash -c "
-        # Source all possible shell configurations
-        [ -f \$HOME/.bashrc ] && source \$HOME/.bashrc 2>/dev/null || true
-        [ -f \$HOME/.zshrc ] && source \$HOME/.zshrc 2>/dev/null || true
+    if $shell_cmd -c "
+        # Source all possible shell configurations based on shell type
+        if [ '$shell_cmd' = 'zsh' ]; then
+            [ -f \$HOME/.zshrc ] && source \$HOME/.zshrc 2>/dev/null || true
+            [ -f \$HOME/.zprofile ] && source \$HOME/.zprofile 2>/dev/null || true
+        else
+            [ -f \$HOME/.bashrc ] && source \$HOME/.bashrc 2>/dev/null || true
+            [ -f \$HOME/.bash_profile ] && source \$HOME/.bash_profile 2>/dev/null || true
+        fi
+        
         [ -f \$HOME/.profile ] && source \$HOME/.profile 2>/dev/null || true
         [ -f \$HOME/.cargo/env ] && source \$HOME/.cargo/env 2>/dev/null || true
         
         # Add common paths where tools might be installed
         export PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:/usr/local/bin:\$PATH\"
+        
+        # For FZF, check if it's in the home directory too
+        [ -f \$HOME/.fzf.bash ] && source \$HOME/.fzf.bash 2>/dev/null || true
+        [ -f \$HOME/.fzf.zsh ] && source \$HOME/.fzf.zsh 2>/dev/null || true
         
         # Check if command exists and try to get version
         if command -v $cmd >/dev/null 2>&1; then
@@ -131,6 +147,58 @@ validate_command_new_session() {
         print_error "$description is not available even in new shell sessions"
         return 1
     fi
+}
+
+# Function to validate commands specifically with proper shell environment 
+validate_command_with_shell() {
+    local cmd="$1"
+    local name="${2:-$cmd}"
+    local description="${3:-$name}"
+    
+    print_info "Validating $description with shell environment..."
+    
+    # First check in current session
+    if command -v "$cmd" >/dev/null 2>&1; then
+        print_success "$description is available in current session"
+        return 0
+    fi
+    
+    # Try with different shell environments
+    local found=0
+    
+    # Try with bash environment
+    if bash -c "
+        export PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:/usr/local/bin:\$PATH\"
+        [ -f \$HOME/.bashrc ] && source \$HOME/.bashrc 2>/dev/null || true
+        [ -f \$HOME/.profile ] && source \$HOME/.profile 2>/dev/null || true
+        [ -f \$HOME/.cargo/env ] && source \$HOME/.cargo/env 2>/dev/null || true
+        command -v $cmd >/dev/null 2>&1
+    " 2>/dev/null; then
+        print_success "$description is available with bash environment"
+        found=1
+    fi
+    
+    # Try with zsh environment if available
+    if [ $found -eq 0 ] && command -v zsh >/dev/null 2>&1; then
+        if zsh -c "
+            export PATH=\"\$HOME/.local/bin:\$HOME/.cargo/bin:/usr/local/bin:\$PATH\"
+            [ -f \$HOME/.zshrc ] && source \$HOME/.zshrc 2>/dev/null || true
+            [ -f \$HOME/.zprofile ] && source \$HOME/.zprofile 2>/dev/null || true
+            [ -f \$HOME/.profile ] && source \$HOME/.profile 2>/dev/null || true
+            [ -f \$HOME/.cargo/env ] && source \$HOME/.cargo/env 2>/dev/null || true
+            command -v $cmd >/dev/null 2>&1
+        " 2>/dev/null; then
+            print_success "$description is available with zsh environment"
+            found=1
+        fi
+    fi
+    
+    if [ $found -eq 0 ]; then
+        print_error "$description is not available in any shell environment"
+        return 1
+    fi
+    
+    return 0
 }
 
 # Function to validate multiple commands that might be in new sessions

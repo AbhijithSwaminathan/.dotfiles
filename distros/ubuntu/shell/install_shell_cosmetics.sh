@@ -315,11 +315,16 @@ else
     print_success "GitHub CLI is already installed"
 fi
 
-### Souce ~/.zshrc
+### Source ~/.zshrc (only if we're in ZSH)
 if [ -f "$HOME/.zshrc" ]; then
-    print_info "Sourcing ~/.zshrc to apply changes..."
-    source "$HOME/.zshrc"
-    print_success "Sourced ~/.zshrc successfully"
+    if [ -n "$ZSH_VERSION" ]; then
+        print_info "Sourcing ~/.zshrc to apply changes..."
+        source "$HOME/.zshrc"
+        print_success "Sourced ~/.zshrc successfully"
+    else
+        print_info "Skipping ~/.zshrc sourcing (not in ZSH shell)"
+        print_info "Please restart your terminal or run 'zsh' to use the new configuration"
+    fi
 else
     print_warning "No ~/.zshrc file found to source"
 fi
