@@ -131,17 +131,6 @@ else
     return 1
 fi
 
-### Remove cloned fzf directory if it exists
-if [ -d "$HOME/.fzf" ]; then
-    print_info "Cleaning up fzf installation files..."
-    if rm -rf "$HOME/.fzf"; then
-        print_success "fzf installation files cleaned up"
-    else
-        print_error "Failed to clean up fzf installation files"
-    fi
-else
-    print_warning "No fzf installation files found to clean up"
-fi
 
 ### FZF Extras
 #### Clone fzf-git.sh repository for enhanced git integration
@@ -297,6 +286,13 @@ if [ -f "$DOTFILES_DIR/common/zshell/fzf-config.zsh" ]; then
     safe_symlink "$DOTFILES_DIR/common/zshell/fzf-config.zsh" "$HOME/.config/fzf-config.zsh" "FZF configuration"
 else
     print_error "FZF configuration file not found: $DOTFILES_DIR/common/zshell/fzf-config.zsh"
+fi
+
+### Symlink Git configuration
+if [ -f "$DOTFILES_DIR/common/git/.gitconfig" ]; then
+    safe_symlink "$DOTFILES_DIR/common/git/.gitconfig" "$HOME/.gitconfig" "Git configuration"
+else
+    print_error "Git configuration file not found: $DOTFILES_DIR/common/git/.gitconfig"
 fi
 
 # Install Tailscale CLI

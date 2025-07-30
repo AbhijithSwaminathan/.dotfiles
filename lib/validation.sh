@@ -289,6 +289,33 @@ validate_env_var() {
     return 0
 }
 
+# Function to validate if a path exists in an environment variable
+validate_path_in_env() {
+    local path_to_check="$1"
+    local env_var="$2"
+    local description="${3:-$path_to_check in $env_var}"
+    
+    print_info "Validating $description..."
+    
+    # Get the environment variable value
+    local env_value="${!env_var}"
+    
+    if [ -z "$env_value" ]; then
+        print_error "$env_var environment variable is not set"
+        return 1
+    fi
+    
+    # Check if the path is in the environment variable
+    if echo "$env_value" | grep -q "$path_to_check"; then
+        print_success "$description ✓"
+        return 0
+    else
+        print_error "$path_to_check not found in $env_var"
+        print_info "Current $env_var: $env_value"
+        return 1
+    fi
+}
+
 # Function to validate shell configuration
 validate_shell_config() {
     local shell_name="${1:-bash}"

@@ -79,6 +79,7 @@ run_validation validate_session_commands \
     "lolcrab:lolcrab" \
     "pfetch:pfetch" \
     "fzf:fzf" \
+    "fd:fd-find" \
     "eza:eza" \
     "zoxide:zoxide" \
     "delta:git-delta" \
@@ -89,6 +90,15 @@ run_validation validate_session_commands \
     "nvim:Neovim" \
     "tailscale:Tailscale CLI" \
     "gh:GitHub CLI"
+
+print_subsection "FZF Validation"
+# Validate FZF installation and key bindings
+run_validation validate_command_new_session "fzf" "FZF" "Fuzzy Finder"
+if command -v fzf >/dev/null 2>&1; then
+    print_info "Validating FZF environment variables..."
+    run_validation validate_env_var "FZF_DEFAULT_COMMAND" "FZF default command"
+    run_validation validate_env_var "FZF_DEFAULT_OPTS" "FZF default options"
+fi
 
 # Text Editor
 print_header "${TOOL} Text Editor"
@@ -102,16 +112,66 @@ DOTFILES_DIR="$HOME/.dotfiles"
 
 print_subsection "Git Configuration"
 run_validation validate_symlink "$HOME/.gitconfig" "$DOTFILES_DIR/common/git/.gitconfig" "Git config"
+if [ -f "$HOME/.gitconfig" ]; then
+    print_info "Validating git configuration settings..."
+    # Check if git config has basic settings
+    if git config --global user.name >/dev/null 2>&1 && git config --global user.email >/dev/null 2>&1; then
+        print_success "Git user configuration is set"
+    else
+        print_warning "Git user configuration may need to be set (name/email)"
+    fi
+fi
+
+print_subsection "Shell Aliases and Functions"
+# Validate important aliases are available in new shell session
+if command -v zsh >/dev/null 2>&1; then
+    print_info "Validating shell aliases..."
+    
+    # Test fd alias
+    if zsh -c 'source ~/.zshrc 2>/dev/null && command -v fd >/dev/null 2>&1'; then
+        print_success "fd alias is configured correctly"
+    else
+        print_warning "fd alias may not be configured"
+    fi
+    
+    # Test thefuck aliases
+    if zsh -c 'source ~/.zshrc 2>/dev/null && command -v fuck >/dev/null 2>&1'; then
+        print_success "thefuck aliases are configured correctly"
+    else
+        print_warning "thefuck aliases may not be configured"
+    fi
+fi
 
 print_subsection "Shell Configuration"
 run_validation validate_symlink "$HOME/.zshrc" "$DOTFILES_DIR/common/zshell/.zshrc" "ZSH config"
 run_validation validate_symlink "$HOME/.p10k.zsh" "$DOTFILES_DIR/common/zshell/.p10k.zsh" "Powerlevel10k config"
+run_validation validate_symlink "$HOME/.config/fzf-config.zsh" "$DOTFILES_DIR/common/zshell/fzf-config.zsh" "FZF config"
+
+print_subsection "FZF Integration"
+run_validation validate_path "$HOME/.config/fzf-git.sh" "directory" "FZF Git integration"
+run_validation validate_path "$HOME/.config/fzf-git.sh/fzf-git.sh" "file" "FZF Git script"
+
+# Validate FZF functions are loaded in a new shell session
+if [ -f "$HOME/.config/fzf-config.zsh" ]; then
+    print_info "Validating FZF configuration functions..."
+    # Test if FZF functions are available in new zsh session
+    if zsh -c 'source ~/.config/fzf-config.zsh && type _fzf_comprun >/dev/null 2>&1'; then
+        print_success "FZF completion functions are loaded correctly"
+    else
+        print_warning "FZF completion functions may not be loading properly"
+    fi
+fi
 
 print_subsection "Neovim Configuration"
 run_validation validate_path "$HOME/.config/nvim" "directory" "Neovim config directory"
 
 print_subsection "Bat Configuration"
 run_validation validate_path "$HOME/.config/bat/themes" "directory" "Bat themes directory"
+if [ -d "$HOME/.config/bat/themes" ]; then
+    print_info "Validating bat theme files..."
+    run_validation validate_path "$HOME/.config/bat/themes/tokyonight_night.tmTheme" "file" "Tokyo Night theme"
+fi
+run_validation validate_env_var "BAT_THEME" "Bat theme setting"
 
 # Additional CLI Tools Validation
 print_header "${TOOL} Additional CLI Tools"
@@ -122,6 +182,42 @@ run_validation validate_command_new_session "gh" "GitHub CLI" "GitHub CLI"
 print_header "${TOOL} Python and Package Management"
 run_validation validate_command_new_session "python3.11" "Python 3.11" "Python 3.11"
 run_validation validate_command_new_session "pipx" "pipx" "pipx Package Manager"
+
+print_header "${TOOL} Environment Variables and PATH"
+
+print_subsection "Essential PATH Validation"
+# Validate important directories are in PATH
+print_info "Validating PATH configuration..."
+
+# Check for important directories in PATH
+if echo "$PATH" | grep -q "/usr/local/bin"; then
+    print_success "/usr/local/bin found in PATH ✓"
+else
+    print_warning "/usr/local/bin not found in PATH"
+fi
+
+if echo "$PATH" | grep -q "$HOME/.local/bin"; then
+    print_success "Local bin found in PATH ✓"
+else
+    print_warning "$HOME/.local/bin not found in PATH"
+fi
+
+# Check language-specific paths
+if command -v go >/dev/null 2>&1; then
+    if echo "$PATH" | grep -q "/usr/local/go/bin"; then
+        print_success "Go bin found in PATH ✓"
+    else
+        print_warning "/usr/local/go/bin not found in PATH"
+    fi
+fi
+
+if [ -d "$HOME/.cargo" ]; then
+    if echo "$PATH" | grep -q "$HOME/.cargo/bin"; then
+        print_success "Rust cargo bin found in PATH ✓"
+    else
+        print_warning "$HOME/.cargo/bin not found in PATH"
+    fi
+fi
 
 # Programming Language Environments
 print_header "${TOOL} Programming Language Environments"
