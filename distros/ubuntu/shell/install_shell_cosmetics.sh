@@ -149,10 +149,21 @@ if ! command -v thefuck &> /dev/null; then
     safe_execute "Installing pipx" "python3.11 -m pip install --user pipx"
     safe_execute "Ensuring pipx path" "python3.11 -m pipx ensurepath --force"
     
-    # Install thefuck using pipx with Python 3.11
-    safe_execute "Installing thefuck with pipx" "pipx install --python python3.11 thefuck"
+    # Install thefuck using pipx with Python 3.11 - run in new shell to ensure PATH is updated
+    safe_execute "Installing thefuck with pipx in new shell session" \
+        "bash -c 'export PATH=\"\$HOME/.local/bin:\$PATH\"; pipx install --python python3.11 thefuck'"
     
-    verify_command "thefuck" "thefuck"
+    # Verify installation - check both current session and new shell with updated PATH
+    if ! command -v thefuck &> /dev/null; then
+        # Try to verify in new shell with updated PATH
+        if bash -c 'export PATH="$HOME/.local/bin:$PATH"; command -v thefuck' &>/dev/null; then
+            print_success "thefuck installed successfully (available in new shell sessions)"
+        else
+            print_error "Failed to install thefuck"
+        fi
+    else
+        verify_command "thefuck" "thefuck"
+    fi
 else
     print_success "thefuck is already installed"
 fi
