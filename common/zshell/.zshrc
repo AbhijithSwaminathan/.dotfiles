@@ -125,6 +125,8 @@ zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 alias ls='eza --color=always --long --git --no-filesize --icons=always --no-time --no-user --no-permissions'
 alias tree='eza --tree --color=always --long --git --no-filesize --icons=always --no-time --no-user --no-permissions'
 alias leetcode='python3 create_leetcode.py'
+alias fd=fdfind
+
 
 # Shell integrations
 eval "$(fzf --zsh)"

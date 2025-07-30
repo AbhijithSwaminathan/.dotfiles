@@ -92,7 +92,7 @@ else
 fi
 
 ### Install terminal tools
-for tool in "fzf" "eza" "zoxide" "delta:git-delta" "tldr" "rg:ripgrep"; do
+for tool in "fzf" "fd-find" "eza" "zoxide" "delta:git-delta" "tldr" "rg:ripgrep"; do
     tool_name=$(echo "$tool" | cut -d: -f1)
     package_name=$(echo "$tool" | cut -d: -f2)
     [ "$package_name" = "$tool_name" ] && package_name="$tool_name"
@@ -104,6 +104,17 @@ for tool in "fzf" "eza" "zoxide" "delta:git-delta" "tldr" "rg:ripgrep"; do
         print_success "$package_name is already installed"
     fi
 done
+
+### FZF Extras
+#### clone the repo https://github.com/junegunn/fzf-git.sh.git to $HOME/.config/fzf-git.sh/fzf-git.sh
+if [ ! -d "$HOME/.config/fzf-git.sh" ]; then
+    print_info "Cloning fzf-git.sh repository..."
+    if git clone https://github.com/junegunn/fzf-git.sh.git "$HOME/.config/fzf-git.sh"; then
+        print_success "fzf-git.sh cloned successfully"
+    else
+        print_error "Failed to clone fzf-git.sh"
+    fi
+fi
 
 ### Install bat
 if ! command -v bat &> /dev/null; then
